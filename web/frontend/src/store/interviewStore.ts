@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Question, Answer } from '../types';
+import { analyticsAPI } from '../api/client';
 
 interface SessionRecord {
   id: string;
@@ -24,6 +25,7 @@ interface InterviewState {
   currentQuestionIndex: number;
   timeRemaining: number;
   isActive: boolean;
+  loading: boolean;
 
   /* Historical */
   sessions: SessionRecord[];
@@ -37,6 +39,8 @@ interface InterviewState {
   startSession: () => void;
   endSession: (score: number) => void;
   reset: () => void;
+  fetchSessions: () => Promise<void>;
+  setLoading: (loading: boolean) => void;
 }
 
 export const useInterviewStore = create<InterviewState>()(
@@ -51,6 +55,7 @@ export const useInterviewStore = create<InterviewState>()(
       currentQuestionIndex: 0,
       timeRemaining: 0,
       isActive: false,
+      loading: false,
       sessions: [],
 
       setupSession: ({ sessionId, role, company, persona }) =>
@@ -89,6 +94,20 @@ export const useInterviewStore = create<InterviewState>()(
           timeRemaining: 0,
           isActive: false,
         }),
+      
+      setLoading: (loading) => set({ loading }),
+
+      fetchSessions: async () => {
+        set({ loading: true });
+        try {
+          const { data } = await analyticsAPI.getHistory();
+          set({ sessions: data });
+        } catch (error) {
+          console.error('Failed to fetch sessions:', error);
+        } finally {
+          set({ loading: false });
+        }
+      },
     }),
     {
       name: 'prepmate-interview',

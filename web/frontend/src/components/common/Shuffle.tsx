@@ -140,8 +140,8 @@ const Shuffle: React.FC<ShuffleProps> = ({
 
         const rand = (set: string) => set.charAt(Math.floor(Math.random() * set.length)) || '';
         const chars = (splitRef.current as any).chars || [];
-
-        chars.forEach(ch => {
+        const rolls = Math.max(1, Math.floor(shuffleTimes));
+        chars.forEach((ch: HTMLElement) => {
           const parent = ch.parentElement;
           if (!parent) return;
 
@@ -168,7 +168,7 @@ const Shuffle: React.FC<ShuffleProps> = ({
           parent.insertBefore(wrap, ch);
           wrap.appendChild(inner);
 
-          const firstOrig = ch.cloneNode(true);
+          const firstOrig = ch.cloneNode(true) as HTMLElement;
           Object.assign(firstOrig.style, {
             display: shuffleDirection === 'up' || shuffleDirection === 'down' ? 'block' : 'inline-block',
             width: w + 'px',
@@ -184,7 +184,7 @@ const Shuffle: React.FC<ShuffleProps> = ({
 
           inner.appendChild(firstOrig);
           for (let k = 0; k < rolls; k++) {
-            const c = ch.cloneNode(true);
+            const c = ch.cloneNode(true) as HTMLElement;
             if (scrambleCharset) c.textContent = rand(scrambleCharset);
             Object.assign(c.style, {
               display: shuffleDirection === 'up' || shuffleDirection === 'down' ? 'block' : 'inline-block',
@@ -256,11 +256,11 @@ const Shuffle: React.FC<ShuffleProps> = ({
         wrappersRef.current.forEach(w => {
           const strip = w.firstElementChild;
           if (!strip) return;
-          const real = strip.querySelector('[data-orig="1"]');
+          const real = strip.querySelector('[data-orig="1"]') as HTMLElement;
           if (!real) return;
           strip.replaceChildren(real);
-          strip.style.transform = 'none';
-          strip.style.willChange = 'auto';
+          (strip as HTMLElement).style.transform = 'none';
+          (strip as HTMLElement).style.willChange = 'auto';
         });
       };
 
@@ -330,13 +330,15 @@ const Shuffle: React.FC<ShuffleProps> = ({
               ease,
               force3D: true
             };
-            if (isVertical) {
-              vars.y = parseFloat(strip.getAttribute('data-final-y') || '0');
-            } else {
-              vars.x = parseFloat(strip.getAttribute('data-final-x') || '0');
+            if (strip) {
+              if (isVertical) {
+                vars.y = parseFloat(strip.getAttribute('data-final-y') || '0');
+              } else {
+                vars.x = parseFloat(strip.getAttribute('data-final-x') || '0');
+              }
+              tl.to(strip, vars, d);
+              if (colorFrom && colorTo) tl.fromTo(strip, { color: colorFrom }, { color: colorTo, duration, ease }, d);
             }
-            tl.to(strip, vars, d);
-            if (colorFrom && colorTo) tl.fromTo(strip, { color: colorFrom }, { color: colorTo, duration, ease }, d);
           });
         }
 

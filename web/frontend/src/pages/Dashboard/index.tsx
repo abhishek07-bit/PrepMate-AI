@@ -1,12 +1,17 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, Calendar, Search, History, Code, Landmark, ArrowRight } from 'lucide-react';
+import { TrendingUp, Calendar, Search, History, Code, Landmark, ArrowRight, Loader2 } from 'lucide-react';
 import PebbleCard from '../../components/common/PebbleCard';
 import { useAuthStore } from '../../store/authStore';
 import { useInterviewStore } from '../../store/interviewStore';
 
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
-  const sessions = useInterviewStore((s) => s.sessions);
+  const { sessions, fetchSessions, loading } = useInterviewStore();
+
+  useEffect(() => {
+    fetchSessions();
+  }, [fetchSessions]);
 
   const firstName = user?.firstName || 'there';
   const totalSessions = sessions.length;
@@ -27,9 +32,11 @@ export default function DashboardPage() {
       <header className="mb-xl max-w-3xl mt-xl">
         <h2 className="font-display text-display text-primary mb-md">{getGreeting()}, {firstName}.</h2>
         <p className="font-headline-md text-headline-md text-secondary">
-          {totalSessions === 0
+          {totalSessions === 0 && !loading
             ? 'Start your first mock interview to build your readiness score.'
-            : `You've completed ${totalSessions} session${totalSessions !== 1 ? 's' : ''}. ${avgScore > 0 ? `Average score: ${avgScore}%.` : ''}`}
+            : totalSessions > 0 
+              ? `You've completed ${totalSessions} session${totalSessions !== 1 ? 's' : ''}. ${avgScore > 0 ? `Average score: ${avgScore}%.` : ''}`
+              : loading ? 'Loading your progress...' : ''}
         </p>
       </header>
 
@@ -41,7 +48,7 @@ export default function DashboardPage() {
             <div>
               <h3 className="font-label-bold text-label-bold text-secondary mb-xs">Interview Readiness Score</h3>
               <p className="font-display text-display text-primary">
-                {totalSessions > 0 ? `${avgScore}%` : '—'}
+                {loading ? <Loader2 className="animate-spin text-secondary" size={32} /> : (totalSessions > 0 ? `${avgScore}%` : '—')}
               </p>
             </div>
             <TrendingUp size={36} className="text-primary" strokeWidth={1.5} />
@@ -58,7 +65,7 @@ export default function DashboardPage() {
               />
             </div>
             <p className="font-body-md text-body-md text-secondary mt-md">
-              {totalSessions === 0
+              {totalSessions === 0 && !loading
                 ? 'Complete your first session to see insights here.'
                 : 'Keep practicing to improve your score. Consistency is key.'}
             </p>

@@ -1,38 +1,120 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Timer, Brain, Mic, ArrowRight } from 'lucide-react';
+import { Timer, Brain, Mic, ArrowRight, Loader2 } from 'lucide-react';
 import ProgressBar from '../../components/common/ProgressBar';
+import { useInterviewStore } from '../../store/interviewStore';
+import { interviewAPI } from '../../api/client';
 
 export default function MockInterviewPage() {
-  const [confidence, setConfidence] = useState<'low' | 'medium' | 'high'>('medium');
   const navigate = useNavigate();
+  const { 
+    sessionId, 
+    questions, 
+    currentQuestionIndex, 
+    nextQuestion, 
+    addAnswer,
+    endSession 
+  } = useInterviewStore();
+
+  const [confidence, setConfidence] = useState<'low' | 'medium' | 'high'>('medium');
+  const [answerText, setAnswerText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [timer, setTimer] = useState(0);
+
+  const currentQuestion = questions[currentQuestionIndex];
+  const isLastQuestion = currentQuestionIndex === questions.length - 1;
+
+  useEffect(() => {
+    if (!sessionId || questions.length === 0) {
+      navigate('/interview/setup');
+    }
+  }, [sessionId, questions, navigate]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimer((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [currentQuestionIndex]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleSubmit = useCallback(async () => {
+    if (!currentQuestion || !answerText.trim()) return;
+
+    setLoading(true);
+    try {
+      const { data } = await interviewAPI.submitAnswer(currentQuestion.id, {
+        text: answerText,
+        confidence,
+        duration: timer,
+      });
+
+      addAnswer({
+        questionId: currentQuestion.id,
+        text: answerText,
+        confidence,
+        duration: timer,
+        score: data.score,
+        feedback: data.feedback,
+      });
+
+      if (isLastQuestion) {
+        // Calculate total score or let backend do it
+        endSession(85); // placeholder score
+        navigate(`/feedback/${sessionId}`);
+      } else {
+        setAnswerText('');
+        setTimer(0);
+        nextQuestion();
+      }
+    } catch (error) {
+      console.error('Failed to submit answer:', error);
+      // Fallback
+      if (isLastQuestion) {
+        navigate(`/feedback/${sessionId}`);
+      } else {
+        nextQuestion();
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [currentQuestion, answerText, confidence, timer, addAnswer, isLastQuestion, nextQuestion, navigate, sessionId, endSession]);
+
+  if (!currentQuestion) return null;
 
   return (
     <main className="flex-1 flex flex-col max-w-max-width mx-auto w-full px-container-padding relative h-screen">
       {/* Top: Minimal Timer & Progress */}
       <header className="w-full pt-xl max-w-4xl mx-auto flex flex-col gap-sm">
         <div className="flex justify-between items-end font-label-sm text-label-sm text-secondary uppercase tracking-widest">
-          <span>Question 3 of 10</span>
+          <span>Question {currentQuestionIndex + 1} of {questions.length}</span>
           <span className="flex items-center gap-xs">
             <Timer size={16} strokeWidth={1.5} />
-            04:12
+            {formatTime(timer)}
           </span>
         </div>
-        <ProgressBar value={30} height="2px" />
+        <ProgressBar value={((currentQuestionIndex + 1) / questions.length) * 100} height="2px" />
       </header>
 
       {/* Center: The Interview Question */}
       <section className="flex-1 flex flex-col justify-center items-center text-center max-w-3xl mx-auto w-full px-lg my-xl">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface-container-low border border-outline-variant font-label-sm text-label-sm text-secondary mb-xl">
           <Brain size={16} strokeWidth={1.5} />
-          Behavioral
+          {currentQuestion.category || 'General'}
         </div>
         <h1 className="font-display text-display text-on-background max-w-2xl">
-          Describe a time when you had to manage a complex project with competing priorities.
+          {currentQuestion.text}
         </h1>
-        <p className="font-body-lg text-body-lg text-secondary mt-lg max-w-xl">
-          Walk me through your framework for prioritization and how you communicated trade-offs to stakeholders.
-        </p>
+        {currentQuestion.subPrompt && (
+          <p className="font-body-lg text-body-lg text-secondary mt-lg max-w-xl">
+            {currentQuestion.subPrompt}
+          </p>
+        )}
       </section>
 
       {/* Bottom: Interaction Area */}
@@ -62,6 +144,8 @@ export default function MockInterviewPage() {
           <textarea
             className="w-full h-32 bg-transparent border-none outline-none resize-none font-body-lg text-body-lg text-on-surface placeholder:text-outline focus:ring-0 p-0"
             placeholder="Start speaking, or type your response here..."
+            value={answerText}
+            onChange={(e) => setAnswerText(e.target.value)}
           />
           <div className="flex justify-between items-center mt-md pt-md border-t border-outline-variant/50">
             {/* Speaking Indicator */}
@@ -80,15 +164,20 @@ export default function MockInterviewPage() {
             </div>
             {/* Actions */}
             <div className="flex items-center gap-md">
-              <button className="px-6 py-3 rounded-full bg-transparent text-primary font-label-bold text-label-bold hover:bg-surface-container-high transition-colors">
+              <button 
+                onClick={() => nextQuestion()}
+                className="px-6 py-3 rounded-full bg-transparent text-primary font-label-bold text-label-bold hover:bg-surface-container-high transition-colors"
+              >
                 Skip
               </button>
               <button
-                onClick={() => navigate('/feedback/1')}
-                className="px-8 py-3 rounded-full bg-primary text-on-primary font-label-bold text-label-bold flex items-center gap-2 hover:opacity-90 transition-opacity"
+                onClick={handleSubmit}
+                disabled={loading || !answerText.trim()}
+                className="px-8 py-3 rounded-full bg-primary text-on-primary font-label-bold text-label-bold flex items-center gap-2 hover:opacity-90 disabled:opacity-50 transition-opacity"
               >
-                Finish Answer
-                <ArrowRight size={18} strokeWidth={1.5} />
+                {loading ? <Loader2 className="animate-spin" size={18} /> : null}
+                {isLastQuestion ? 'Finish Interview' : 'Next Question'}
+                {!loading && <ArrowRight size={18} strokeWidth={1.5} />}
               </button>
             </div>
           </div>

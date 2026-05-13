@@ -44,7 +44,7 @@ class AIProviderError(Exception):
 async def _call_gemini(prompt: str, system_prompt: str = "", temperature: float = 0.7) -> AIResponse:
     """Google Gemini API (native REST — not OpenAI-compatible)."""
     start = time.monotonic()
-    model = "gemini-2.5-flash"
+    model = "gemini-2.0-flash"
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={settings.GEMINI_API_KEY}"
 
     contents = []

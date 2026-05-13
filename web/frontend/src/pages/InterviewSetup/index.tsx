@@ -1,14 +1,60 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Briefcase, Brain, SlidersHorizontal, Search, Building, Play, BarChart3, Gavel, Handshake } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Briefcase, Brain, SlidersHorizontal, Search, Building, Play, BarChart3, Gavel, Handshake, Loader2 } from 'lucide-react';
+import { useInterviewStore } from '../../store/interviewStore';
+import { interviewAPI } from '../../api/client';
 
 export default function InterviewSetupPage() {
+  const navigate = useNavigate();
+  const setupSession = useInterviewStore((s) => s.setupSession);
+  const setQuestions = useInterviewStore((s) => s.setQuestions);
+  
   const [selectedRole, setSelectedRole] = useState('Product Manager');
   const [selectedCompany, setSelectedCompany] = useState('Google');
   const [selectedPersona, setSelectedPersona] = useState('analytical');
   const [rigorLevel, setRigorLevel] = useState(4);
+  const [loading, setLoading] = useState(false);
 
   const rigorLabels = ['Baseline', 'Standard', 'Advanced', 'Expert', 'Bar Raiser'];
+
+  const handleStart = async () => {
+    setLoading(true);
+    try {
+      const { data } = await interviewAPI.setup({
+        role: selectedRole,
+        company: selectedCompany,
+        persona: selectedPersona,
+        rigorLevel: rigorLevel,
+      });
+
+      if (data.sessionId) {
+        setupSession({
+          sessionId: data.sessionId,
+          role: selectedRole,
+          company: selectedCompany,
+          persona: selectedPersona,
+        });
+
+        // Fetch initial questions
+        const qRes = await interviewAPI.getQuestions(data.sessionId);
+        setQuestions(qRes.data);
+        
+        navigate('/interview/session');
+      }
+    } catch (error) {
+      console.error('Failed to setup interview:', error);
+      // Fallback for demo if backend is down
+      setupSession({
+        sessionId: `mock-${Date.now()}`,
+        role: selectedRole,
+        company: selectedCompany,
+        persona: selectedPersona,
+      });
+      navigate('/interview/session');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <main className="max-w-max-width mx-auto px-container-padding py-section">
@@ -38,6 +84,8 @@ export default function InterviewSetupPage() {
                     className="w-full bg-surface-container-lowest border border-outline-variant rounded-input py-md pl-xl pr-md font-body-md text-body-md text-on-background focus:border-primary focus:ring-0 transition-colors"
                     placeholder="e.g. Senior Product Manager"
                     type="text"
+                    value={selectedRole}
+                    onChange={(e) => setSelectedRole(e.target.value)}
                   />
                 </div>
                 <div className="flex flex-wrap gap-sm mt-md">
@@ -65,6 +113,8 @@ export default function InterviewSetupPage() {
                     className="w-full bg-surface-container-lowest border border-outline-variant rounded-input py-md pl-xl pr-md font-body-md text-body-md text-on-background focus:border-primary focus:ring-0 transition-colors"
                     placeholder="e.g. Google, Stripe"
                     type="text"
+                    value={selectedCompany}
+                    onChange={(e) => setSelectedCompany(e.target.value)}
                   />
                 </div>
                 <div className="flex flex-wrap gap-sm mt-md">
@@ -125,7 +175,7 @@ export default function InterviewSetupPage() {
             </div>
             <div className="px-sm py-md">
               <input
-                className="w-full"
+                className="w-full accent-primary"
                 max={5}
                 min={1}
                 type="range"
@@ -168,13 +218,18 @@ export default function InterviewSetupPage() {
                 </li>
               ))}
             </ul>
-            <Link
-              to="/interview/session"
-              className="w-full bg-primary text-on-primary font-label-bold text-label-bold py-lg rounded-btn hover:bg-surface-tint transition-colors flex items-center justify-center gap-sm"
+            <button
+              onClick={handleStart}
+              disabled={loading}
+              className="w-full bg-primary text-on-primary font-label-bold text-label-bold py-lg rounded-btn hover:bg-surface-tint disabled:opacity-50 transition-colors flex items-center justify-center gap-sm"
             >
-              <Play size={20} strokeWidth={1.5} />
-              Start Mock Interview
-            </Link>
+              {loading ? (
+                <Loader2 className="animate-spin" size={20} />
+              ) : (
+                <Play size={20} strokeWidth={1.5} />
+              )}
+              {loading ? 'Initializing...' : 'Start Mock Interview'}
+            </button>
             <p className="font-label-sm text-label-sm text-center text-secondary mt-md">
               Microphone access will be required on the next screen.
             </p>
