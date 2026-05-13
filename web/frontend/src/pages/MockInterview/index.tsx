@@ -55,6 +55,7 @@ export default function MockInterviewPage() {
       });
 
       addAnswer({
+        id: crypto.randomUUID(),
         questionId: currentQuestion.id,
         text: answerText,
         confidence,
