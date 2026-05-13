@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PrepMate AI - Master the Interview</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#646464",
+                        "surface-container": "#eeeeee",
+                        "error": "#ba1a1a",
+                        "secondary": "#5e5e5e",
+                        "outline": "#7e7576",
+                        "surface": "#f9f9f9",
+                        "surface-container-low": "#f3f3f3",
+                        "on-tertiary-fixed": "#1b1b1b",
+                        "on-surface-variant": "#4c4546",
+                        "on-surface": "#1a1c1c",
+                        "secondary-fixed-dim": "#c7c6c6",
+                        "inverse-primary": "#c6c6c6",
+                        "on-background": "#1a1c1c",
+                        "surface-container-high": "#e8e8e8",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#1b1b1b",
+                        "surface-tint": "#5e5e5e",
+                        "on-tertiary-container": "#848484",
+                        "secondary-fixed": "#e3e2e2",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#e2e2e2",
+                        "outline-variant": "#cfc4c5",
+                        "tertiary-container": "#1b1b1b",
+                        "primary-fixed-dim": "#c6c6c6",
+                        "surface-dim": "#dadada",
+                        "on-primary-container": "#848484",
+                        "primary-fixed": "#e2e2e2",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-primary": "#ffffff",
+                        "background": "#f9f9f9",
+                        "surface-variant": "#e2e2e2",
+                        "primary": "#000000",
+                        "tertiary": "#000000",
+                        "surface-bright": "#f9f9f9",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#464747",
+                        "tertiary-fixed": "#e2e2e2",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#e3e2e2",
+                        "inverse-surface": "#2f3131",
+                        "on-primary-fixed": "#1b1b1b",
+                        "on-primary-fixed-variant": "#474747",
+                        "inverse-on-surface": "#f1f1f1",
+                        "tertiary-fixed-dim": "#c6c6c6",
+                        "on-tertiary-fixed-variant": "#474747"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "max-width": "1200px",
+                        "unit": "8px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "xl": "40px",
+                        "xs": "4px",
+                        "container-padding": "32px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Geist"],
+                        "label-sm": ["Geist"],
+                        "display": ["Geist"],
+                        "headline-md": ["Geist"],
+                        "headline-lg": ["Geist"],
+                        "label-bold": ["Geist"],
+                        "body-lg": ["Geist"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "display": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.03em", "fontWeight": "600" }],
+                        "label-bold": ["14px", { "lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "letterSpacing": "-0.01em", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Geist', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface antialiased min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="bg-surface border-b border-outline-variant w-full px-container-padding py-md sticky top-0 z-50">
+<div class="flex justify-between items-center max-w-max-width mx-auto w-full">
+<div class="flex items-center gap-xl">
+<span class="font-headline-lg text-headline-md tracking-tighter text-primary">PrepMate AI</span>
+<nav class="hidden md:flex gap-lg">
+<!-- Since this is a landing page, mapping to Dashboard isn't perfect, but we'll highlight the brand or hide nav if irrelevant. Let's show links as inactive for landing -->
+<a class="font-label-bold text-label-bold text-secondary hover:text-primary transition-colors duration-200" href="#">Dashboard</a>
+<a class="font-label-bold text-label-bold text-secondary hover:text-primary transition-colors duration-200" href="#">Practice</a>
+<a class="font-label-bold text-label-bold text-secondary hover:text-primary transition-colors duration-200" href="#">Resources</a>
+<a class="font-label-bold text-label-bold text-secondary hover:text-primary transition-colors duration-200" href="#">History</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<button aria-label="Notifications" class="text-secondary hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button aria-label="Settings" class="text-secondary hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<img alt="User avatar" class="w-10 h-10 rounded-full border border-outline-variant object-cover ml-md hidden md:block" data-alt="A close-up portrait of a professional looking individual against a clean, light grey background. The lighting is soft and even, highlighting their features naturally without harsh shadows. They exude quiet confidence and intelligence, perfectly fitting a high-end corporate or academic setting. The overall mood is calm and focused." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvw0WogNR-R5HEuP1kn9jXMjLN7wiFPxO96TyjpFRplrZONn4OJwKo02vyLmZYAxIHwx3fFa3Q4LM2zdSOb3msx8uVqbxmIsHq-x3klr4VVqULs3aQ0QQ-Tb6KP7qcemKF5ymMq8konK_tWNLhHae7vHUYKcZQB3KgzQcAFx4oB6YabdulimgR540MCRlI7z6Zv3W2FoD7NMm2n8koEcdP6vyEdnOYkoaq8bHBfPjahHRd-CQn46Uy7HVHdvBngoqddC_J39EQd-w"/>
+</div>
+</div>
+</header>
+<main class="flex-grow flex flex-col">
+<!-- Hero Section -->
+<section class="w-full max-w-max-width mx-auto px-container-padding py-[120px] flex flex-col items-center justify-center text-center">
+<h1 class="font-display text-display text-primary max-w-3xl mb-lg leading-tight">
+                Master the Interview with Quiet Intelligence.
+            </h1>
+<p class="font-body-lg text-body-lg text-secondary max-w-2xl mb-xl">
+                A disciplined approach to interview preparation. Elevate your narrative through adaptive logic, removing noise to focus purely on performance.
+            </p>
+<div class="flex gap-md">
+<button class="bg-primary text-on-primary font-label-bold text-label-bold px-lg py-md rounded-DEFAULT hover:opacity-90 transition-opacity">
+                    Start Practicing
+                </button>
+<button class="bg-surface-container-lowest text-primary border border-outline-variant font-label-bold text-label-bold px-lg py-md rounded-DEFAULT hover:bg-surface-container-low transition-colors">
+                    Explore Logic
+                </button>
+</div>
+</section>
+<!-- Feature Showcase (Bento/Pebble) -->
+<section class="w-full max-w-max-width mx-auto px-container-padding py-[80px]">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-lg">
+<!-- Card 1 -->
+<div class="bg-surface-container-low border border-outline-variant rounded-lg p-[40px] flex flex-col h-full">
+<h3 class="font-headline-md text-headline-md text-primary mb-md">Adaptive Learning</h3>
+<p class="font-body-md text-body-md text-secondary flex-grow">
+                        Our systems analyze your responses in real-time, dynamically adjusting the difficulty and focus of subsequent prompts to systematically eliminate your weaknesses.
+                    </p>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-low border border-outline-variant rounded-lg p-[40px] flex flex-col h-full">
+<h3 class="font-headline-md text-headline-md text-primary mb-md">Resume Intelligence</h3>
+<p class="font-body-md text-body-md text-secondary flex-grow">
+                        Deep parsing of your professional history allows the model to interrogate specific experiences, demanding detailed, structurally sound answers.
+                    </p>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-low border border-outline-variant rounded-lg p-[40px] flex flex-col h-full">
+<h3 class="font-headline-md text-headline-md text-primary mb-md">Company Specific Prep</h3>
+<p class="font-body-md text-body-md text-secondary flex-grow">
+                        Ingesting corporate philosophies and recent earnings reports, the AI simulates the exact cultural and technical expectations of your target organization.
+                    </p>
+</div>
+</div>
+</section>
+<!-- Workflow Section -->
+<section class="w-full bg-surface py-[120px]">
+<div class="max-w-max-width mx-auto px-container-padding flex flex-col md:flex-row gap-[80px] items-center">
+<div class="flex-1 space-y-[40px]">
+<div class="flex flex-col gap-sm">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Phase 01</span>
+<h3 class="font-headline-md text-headline-md text-primary">Upload &amp; Parse</h3>
+<p class="font-body-md text-body-md text-secondary">Provide your current resume. The AI deconstructs your career into queryable data points.</p>
+</div>
+<div class="h-px bg-outline-variant w-full"></div>
+<div class="flex flex-col gap-sm">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Phase 02</span>
+<h3 class="font-headline-md text-headline-md text-primary">Target Selection</h3>
+<p class="font-body-md text-body-md text-secondary">Define the role and organization. The model aligns its evaluation criteria accordingly.</p>
+</div>
+<div class="h-px bg-outline-variant w-full"></div>
+<div class="flex flex-col gap-sm">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Phase 03</span>
+<h3 class="font-headline-md text-headline-md text-primary">Simulated Interrogation</h3>
+<p class="font-body-md text-body-md text-secondary">Engage in a rigorous, time-bound session. Receive immediate, actionable feedback on clarity and substance.</p>
+</div>
+</div>
+<div class="flex-1 bg-surface-container-low border border-outline-variant rounded-xl p-[40px] aspect-square flex items-center justify-center">
+<div class="text-center">
+<p class="font-headline-md text-headline-md text-secondary mb-md">System Ready.</p>
+<span class="font-body-md text-body-md text-on-surface-variant">Awaiting input...</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Testimonial Section -->
+<section class="w-full max-w-max-width mx-auto px-container-padding py-[120px]">
+<h2 class="font-headline-lg text-headline-lg text-primary mb-[60px] text-center">Observed Outcomes</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-[40px]">
+<p class="font-body-lg text-body-lg text-primary mb-xl leading-relaxed">
+                        "The precision of the feedback is unmatched. It didn't just tell me my answer was wrong; it pointed out the exact structural flaw in my reasoning."
+                    </p>
+<div class="font-label-bold text-label-bold text-secondary">
+                        Candidate, Strategy Consulting
+                    </div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-[40px]">
+<p class="font-body-lg text-body-lg text-primary mb-xl leading-relaxed">
+                        "A completely noise-free environment. No gamification, just pure, disciplined preparation that translated directly to interview performance."
+                    </p>
+<div class="font-label-bold text-label-bold text-secondary">
+                        Candidate, Product Management
+                    </div>
+</div>
+</div>
+</section>
+<!-- Bottom CTA -->
+<section class="w-full bg-primary text-on-primary py-[120px] px-container-padding text-center">
+<div class="max-w-3xl mx-auto flex flex-col items-center">
+<h2 class="font-display text-display mb-lg">Begin Preparation.</h2>
+<p class="font-body-lg text-body-lg text-surface-dim mb-[60px] max-w-xl">
+                    Step into the quiet logic of structured interview prep. Elevate your communication.
+                </p>
+<button class="bg-surface-container-lowest text-primary font-label-bold text-label-bold px-xl py-lg rounded-full hover:bg-surface-container-low transition-colors duration-300">
+                    Start Practicing
+                </button>
+</div>
+</section>
+</main>
+<footer class="w-full bg-surface-container-lowest border-t border-outline-variant py-lg px-container-padding">
+<div class="max-w-max-width mx-auto flex flex-col md:flex-row justify-between items-center text-secondary font-label-sm text-label-sm">
+<span>© 2024 PrepMate AI. All rights reserved.</span>
+<div class="flex gap-md mt-sm md:mt-0">
+<a class="hover:text-primary transition-colors" href="#">Privacy</a>
+<a class="hover:text-primary transition-colors" href="#">Terms</a>
+</div>
+</div>
+</footer>
+</body></html>

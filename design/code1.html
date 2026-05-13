@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PrepMate AI - Adaptive Path</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#646464",
+                        "surface-container": "#eeeeee",
+                        "error": "#ba1a1a",
+                        "secondary": "#5e5e5e",
+                        "outline": "#7e7576",
+                        "surface": "#f9f9f9",
+                        "surface-container-low": "#f3f3f3",
+                        "on-tertiary-fixed": "#1b1b1b",
+                        "on-surface-variant": "#4c4546",
+                        "on-surface": "#1a1c1c",
+                        "secondary-fixed-dim": "#c7c6c6",
+                        "inverse-primary": "#c6c6c6",
+                        "on-background": "#1a1c1c",
+                        "surface-container-high": "#e8e8e8",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#1b1b1b",
+                        "surface-tint": "#5e5e5e",
+                        "on-tertiary-container": "#848484",
+                        "secondary-fixed": "#e3e2e2",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#e2e2e2",
+                        "outline-variant": "#cfc4c5",
+                        "tertiary-container": "#1b1b1b",
+                        "primary-fixed-dim": "#c6c6c6",
+                        "surface-dim": "#dadada",
+                        "on-primary-container": "#848484",
+                        "primary-fixed": "#e2e2e2",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-primary": "#ffffff",
+                        "background": "#f9f9f9",
+                        "surface-variant": "#e2e2e2",
+                        "primary": "#000000",
+                        "tertiary": "#000000",
+                        "surface-bright": "#f9f9f9",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#464747",
+                        "tertiary-fixed": "#e2e2e2",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#e3e2e2",
+                        "inverse-surface": "#2f3131",
+                        "on-primary-fixed": "#1b1b1b",
+                        "on-primary-fixed-variant": "#474747",
+                        "inverse-on-surface": "#f1f1f1",
+                        "tertiary-fixed-dim": "#c6c6c6",
+                        "on-tertiary-fixed-variant": "#474747"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "max-width": "1200px",
+                        "unit": "8px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "xl": "40px",
+                        "xs": "4px",
+                        "container-padding": "32px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Geist"],
+                        "label-sm": ["Geist"],
+                        "display": ["Geist"],
+                        "headline-md": ["Geist"],
+                        "headline-lg": ["Geist"],
+                        "label-bold": ["Geist"],
+                        "body-lg": ["Geist"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400"}],
+                        "label-sm": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                        "display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.03em", "fontWeight": "600"}],
+                        "label-bold": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "letterSpacing": "-0.01em", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Geist', sans-serif; background-color: #ffffff; }
+        .path-line {
+            position: absolute;
+            background-color: #E5E5E5;
+            z-index: 0;
+        }
+        .path-line.active {
+            background-color: #000000;
+        }
+        .node { z-index: 10; position: relative; }
+    </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface antialiased min-h-screen flex flex-col md:flex-row overflow-x-hidden">
+<!-- SideNavBar (Desktop) -->
+<nav class="hidden md:flex flex-col p-lg gap-md docked left-0 h-full w-64 border-r border-outline-variant bg-surface-container-low dark:bg-surface-dim">
+<div class="mb-xl">
+<h1 class="font-headline-md text-primary dark:text-on-background tracking-tighter">PrepMate AI</h1>
+<p class="font-label-sm text-secondary mt-1">Adaptive Interview Prep</p>
+</div>
+<div class="flex flex-col gap-sm flex-1">
+<a class="text-secondary dark:text-on-secondary-container p-3 flex items-center gap-3 hover:bg-surface-container-highest dark:hover:bg-surface-container rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-bold text-label-bold">Home</span>
+</a>
+<a class="text-secondary dark:text-on-secondary-container p-3 flex items-center gap-3 hover:bg-surface-container-highest dark:hover:bg-surface-container rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">settings_voice</span>
+<span class="font-label-bold text-label-bold">Mock Chamber</span>
+</a>
+<a class="bg-primary text-on-primary rounded-lg dark:bg-primary-fixed dark:text-on-primary-fixed p-3 flex items-center gap-3 opacity-90 transition-opacity" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-bold text-label-bold">Performance</span>
+</a>
+<a class="text-secondary dark:text-on-secondary-container p-3 flex items-center gap-3 hover:bg-surface-container-highest dark:hover:bg-surface-container rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">tune</span>
+<span class="font-label-bold text-label-bold">Settings</span>
+</a>
+</div>
+<button class="bg-primary text-on-primary font-label-bold text-label-bold py-3 px-4 rounded-DEFAULT w-full mt-auto">Start Practice</button>
+</nav>
+<!-- TopNavBar (Mobile) -->
+<header class="md:hidden flex justify-between items-center w-full px-container-padding py-md border-b border-outline-variant bg-surface dark:bg-background sticky top-0 z-50">
+<h1 class="font-headline-md text-primary dark:text-on-background tracking-tighter">PrepMate AI</h1>
+<div class="flex gap-4">
+<button class="text-secondary hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-secondary hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<!-- Mobile Nav Links (Horizontal scroll) -->
+<div class="md:hidden flex overflow-x-auto gap-lg px-container-padding py-sm border-b border-outline-variant bg-surface w-full hide-scrollbar">
+<a class="text-secondary font-label-bold text-label-bold whitespace-nowrap" href="#">Dashboard</a>
+<a class="text-secondary font-label-bold text-label-bold whitespace-nowrap" href="#">Practice</a>
+<a class="text-primary border-b-2 border-primary pb-1 font-label-bold text-label-bold whitespace-nowrap scale-95 transition-transform duration-150" href="#">Performance</a>
+<a class="text-secondary font-label-bold text-label-bold whitespace-nowrap" href="#">Resources</a>
+</div>
+<!-- Main Content Canvas -->
+<main class="flex-1 p-container-padding md:p-xl max-w-max-width mx-auto w-full">
+<header class="mb-xl">
+<h2 class="font-display text-display text-primary mb-sm">Adaptive Path Visualization</h2>
+<p class="font-body-lg text-body-lg text-secondary max-w-2xl">Your learning trajectory based on real-time performance. The system intelligently routes questions to strengthen weak areas.</p>
+</header>
+<!-- Visualization Container (Pebble) -->
+<section class="bg-[#F5F5F5] border border-[#E5E5E5] rounded-[32px] p-container-padding md:p-xl relative overflow-hidden min-h-[600px] flex flex-col justify-center items-center">
+<!-- Structural Grid/Lines (Decorative background) -->
+<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(#000000 1px, transparent 1px); background-size: 24px 24px;"></div>
+<div class="relative w-full max-w-4xl mx-auto py-20 flex flex-col items-center">
+<!-- SVG Connecting Lines -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none z-0" style="min-height: 100%;">
+<!-- Level 1 to Level 2 -->
+<path class="hidden md:block" d="M 50% 10% L 30% 35%" fill="none" stroke="#000000" stroke-width="2"></path>
+<path class="hidden md:block" d="M 50% 10% L 70% 35%" fill="none" stroke="#E5E5E5" stroke-width="2"></path>
+<path class="md:hidden" d="M 50% 10% L 50% 35%" fill="none" stroke="#000000" stroke-width="2"></path>
+<!-- Level 2 to Level 3 -->
+<path class="hidden md:block" d="M 30% 35% L 15% 65%" fill="none" stroke="#E5E5E5" stroke-width="2"></path>
+<path class="hidden md:block" d="M 30% 35% L 45% 65%" fill="none" stroke="#000000" stroke-width="2"></path>
+<path class="hidden md:block" d="M 70% 35% L 55% 65%" fill="none" stroke="#E5E5E5" stroke-width="2"></path>
+<path class="hidden md:block" d="M 70% 35% L 85% 65%" fill="none" stroke="#E5E5E5" stroke-width="2"></path>
+<!-- Mobile linear paths -->
+<path class="md:hidden" d="M 50% 35% L 50% 65%" fill="none" stroke="#000000" stroke-width="2"></path>
+<path class="md:hidden" d="M 50% 65% L 50% 90%" fill="none" stroke="#E5E5E5" stroke-width="2"></path>
+<!-- Level 3 to Level 4 (Current) -->
+<path class="hidden md:block" d="M 45% 65% L 50% 90%" fill="none" stroke="#000000" stroke-dasharray="6,6" stroke-width="2"></path>
+</svg>
+<!-- Level 1: Start -->
+<div class="node flex flex-col items-center mb-24 md:mb-32 w-full md:w-auto absolute top-[5%] md:left-[50%] md:-translate-x-1/2">
+<div class="w-12 h-12 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-none mb-4 ring-4 ring-[#F5F5F5]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">flag</span>
+</div>
+<div class="bg-surface border border-outline-variant px-4 py-2 rounded-full text-center">
+<h3 class="font-label-bold text-label-bold text-primary">Baseline Assessment</h3>
+<p class="font-label-sm text-label-sm text-secondary">Completed</p>
+</div>
+</div>
+<!-- Level 2 -->
+<div class="node flex flex-col items-center mb-24 md:mb-32 w-full md:w-auto absolute top-[30%] md:left-[30%] md:-translate-x-1/2">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-none mb-4 ring-4 ring-[#F5F5F5]">
+<span class="material-symbols-outlined text-sm">check</span>
+</div>
+<div class="bg-surface border border-outline-variant px-4 py-2 rounded-full text-center max-w-[160px]">
+<h3 class="font-label-bold text-label-bold text-primary">Algorithm Design</h3>
+<p class="font-label-sm text-label-sm text-secondary">Strong: 85%</p>
+</div>
+</div>
+<div class="node hidden md:flex flex-col items-center absolute top-[30%] left-[70%] -translate-x-1/2 opacity-50 grayscale">
+<div class="w-10 h-10 rounded-full bg-surface border-2 border-outline-variant text-secondary flex items-center justify-center shadow-none mb-4 ring-4 ring-[#F5F5F5]">
+<span class="material-symbols-outlined text-sm">lock</span>
+</div>
+<div class="text-center max-w-[160px]">
+<h3 class="font-label-bold text-label-bold text-secondary">System Design Core</h3>
+<p class="font-label-sm text-label-sm text-outline">Bypassed</p>
+</div>
+</div>
+<!-- Level 3 -->
+<div class="node hidden md:flex flex-col items-center absolute top-[60%] left-[15%] -translate-x-1/2 opacity-50 grayscale">
+<div class="w-10 h-10 rounded-full bg-surface border-2 border-outline-variant text-secondary flex items-center justify-center shadow-none mb-4 ring-4 ring-[#F5F5F5]">
+<span class="material-symbols-outlined text-sm">lock</span>
+</div>
+<div class="text-center max-w-[160px]">
+<h3 class="font-label-bold text-label-bold text-secondary">Advanced Trees</h3>
+<p class="font-label-sm text-label-sm text-outline">Skipped</p>
+</div>
+</div>
+<div class="node flex flex-col items-center mb-24 md:mb-32 w-full md:w-auto absolute top-[60%] md:left-[45%] md:-translate-x-1/2">
+<div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-none mb-4 ring-4 ring-[#F5F5F5]">
+<span class="material-symbols-outlined text-sm">check</span>
+</div>
+<div class="bg-surface border border-outline-variant px-4 py-2 rounded-full text-center max-w-[160px]">
+<h3 class="font-label-bold text-label-bold text-primary">Dynamic Programming</h3>
+<p class="font-label-sm text-label-sm text-secondary">Needs Review: 40%</p>
+</div>
+</div>
+<!-- Level 4: Current Focus -->
+<div class="node flex flex-col items-center w-full md:w-auto absolute top-[85%] md:left-[50%] md:-translate-x-1/2">
+<div class="relative w-14 h-14 rounded-full bg-surface border-2 border-primary flex items-center justify-center mb-4 ring-4 ring-[#F5F5F5] z-10">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">target</span>
+<!-- Pulsing ring -->
+<div class="absolute inset-0 rounded-full border border-primary opacity-50 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite]"></div>
+</div>
+<div class="bg-primary text-on-primary px-5 py-3 rounded-xl text-center shadow-none transform -translate-y-2 z-20">
+<span class="text-[10px] font-label-bold uppercase tracking-widest text-on-primary opacity-80 mb-1 block">Current Focus</span>
+<h3 class="font-label-bold text-label-bold">Memoization Deep Dive</h3>
+<p class="font-label-sm text-label-sm mt-1 opacity-90">3 Questions Pending</p>
+</div>
+</div>
+</div>
+<!-- Legend Panel -->
+<div class="absolute bottom-6 right-6 bg-surface border border-outline-variant rounded-xl p-4 hidden lg:flex flex-col gap-3">
+<h4 class="font-label-bold text-label-bold text-primary border-b border-outline-variant pb-2 mb-1">Path Key</h4>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-primary"></div>
+<span class="font-label-sm text-label-sm text-secondary">Mastered Node</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full border-2 border-primary"></div>
+<span class="font-label-sm text-label-sm text-secondary">Current Focus</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-8 h-[2px] bg-primary"></div>
+<span class="font-label-sm text-label-sm text-secondary">Active Path</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-8 h-[2px] bg-[#E5E5E5]"></div>
+<span class="font-label-sm text-label-sm text-secondary">Bypassed Route</span>
+</div>
+</div>
+</section>
+<!-- Action Area beneath Visualization -->
+<div class="mt-xl flex flex-col md:flex-row justify-between items-center gap-md">
+<div>
+<h3 class="font-headline-md text-headline-md text-primary">Ready for the next node?</h3>
+<p class="font-body-md text-body-md text-secondary">Continue focusing on Dynamic Programming to unlock system design paths.</p>
+</div>
+<button class="bg-primary text-on-primary font-label-bold text-label-bold py-3 px-8 rounded-full hover:opacity-90 transition-opacity whitespace-nowrap w-full md:w-auto">Resume Practice</button>
+</div>
+</main>
+</body></html>

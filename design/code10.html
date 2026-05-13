@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PrepMate AI - Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-container": "#646464",
+                    "surface-container": "#eeeeee",
+                    "error": "#ba1a1a",
+                    "secondary": "#5e5e5e",
+                    "outline": "#7e7576",
+                    "surface": "#f9f9f9",
+                    "surface-container-low": "#f3f3f3",
+                    "on-tertiary-fixed": "#1b1b1b",
+                    "on-surface-variant": "#4c4546",
+                    "on-surface": "#1a1c1c",
+                    "secondary-fixed-dim": "#c7c6c6",
+                    "inverse-primary": "#c6c6c6",
+                    "on-background": "#1a1c1c",
+                    "surface-container-high": "#e8e8e8",
+                    "on-secondary": "#ffffff",
+                    "primary-container": "#1b1b1b",
+                    "surface-tint": "#5e5e5e",
+                    "on-tertiary-container": "#848484",
+                    "secondary-fixed": "#e3e2e2",
+                    "on-error": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "surface-container-highest": "#e2e2e2",
+                    "outline-variant": "#cfc4c5",
+                    "tertiary-container": "#1b1b1b",
+                    "primary-fixed-dim": "#c6c6c6",
+                    "surface-dim": "#dadada",
+                    "on-primary-container": "#848484",
+                    "primary-fixed": "#e2e2e2",
+                    "on-secondary-fixed": "#1b1c1c",
+                    "on-primary": "#ffffff",
+                    "background": "#f9f9f9",
+                    "surface-variant": "#e2e2e2",
+                    "primary": "#000000",
+                    "tertiary": "#000000",
+                    "surface-bright": "#f9f9f9",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed-variant": "#464747",
+                    "tertiary-fixed": "#e2e2e2",
+                    "error-container": "#ffdad6",
+                    "secondary-container": "#e3e2e2",
+                    "inverse-surface": "#2f3131",
+                    "on-primary-fixed": "#1b1b1b",
+                    "on-primary-fixed-variant": "#474747",
+                    "inverse-on-surface": "#f1f1f1",
+                    "tertiary-fixed-dim": "#c6c6c6",
+                    "on-tertiary-fixed-variant": "#474747"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "max-width": "1200px",
+                    "unit": "8px",
+                    "md": "16px",
+                    "lg": "24px",
+                    "xl": "40px",
+                    "xs": "4px",
+                    "container-padding": "32px"
+            },
+            "fontFamily": {
+                    "body-md": ["Geist", "sans-serif"],
+                    "label-sm": ["Geist", "sans-serif"],
+                    "display": ["Geist", "sans-serif"],
+                    "headline-md": ["Geist", "sans-serif"],
+                    "headline-lg": ["Geist", "sans-serif"],
+                    "label-bold": ["Geist", "sans-serif"],
+                    "body-lg": ["Geist", "sans-serif"]
+            },
+            "fontSize": {
+                    "body-md": ["16px", {"lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400"}],
+                    "label-sm": ["12px", {"lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.03em", "fontWeight": "600"}],
+                    "label-bold": ["14px", {"lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "letterSpacing": "-0.01em", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased min-h-screen flex w-full">
+<!-- SideNavBar (WEB) -->
+<nav class="hidden md:flex flex-col p-lg gap-md bg-surface-container-low dark:bg-surface-dim border-r border-outline-variant dark:border-outline docked left-0 h-full w-64 fixed left-0 top-0 h-full flex flex-col p-lg gap-md z-10">
+<div class="mb-xl flex flex-col gap-xs">
+<h1 class="font-headline-md text-headline-md text-primary dark:text-on-background tracking-tighter">PrepMate AI</h1>
+<p class="font-label-sm text-label-sm text-secondary">Adaptive Interview Prep</p>
+</div>
+<div class="flex flex-col gap-sm flex-grow">
+<a class="bg-primary text-on-primary rounded-lg dark:bg-primary-fixed dark:text-on-primary-fixed p-3 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined" data-icon="home" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-bold text-label-bold">Home</span>
+</a>
+<a class="text-secondary dark:text-on-secondary-container p-3 flex items-center gap-3 hover:bg-surface-container-highest dark:hover:bg-surface-container rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="settings_voice" style="font-variation-settings: 'FILL' 0;">settings_voice</span>
+<span class="font-label-bold text-label-bold">Mock Chamber</span>
+</a>
+<a class="text-secondary dark:text-on-secondary-container p-3 flex items-center gap-3 hover:bg-surface-container-highest dark:hover:bg-surface-container rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="analytics" style="font-variation-settings: 'FILL' 0;">analytics</span>
+<span class="font-label-bold text-label-bold">Performance</span>
+</a>
+<a class="text-secondary dark:text-on-secondary-container p-3 flex items-center gap-3 hover:bg-surface-container-highest dark:hover:bg-surface-container rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="tune" style="font-variation-settings: 'FILL' 0;">tune</span>
+<span class="font-label-bold text-label-bold">Settings</span>
+</a>
+</div>
+<div class="mt-auto pt-xl">
+<button class="w-full bg-primary text-on-primary py-3 px-4 rounded-[16px] font-label-bold text-label-bold hover:opacity-90 transition-opacity">
+                Start Practice
+            </button>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 p-lg md:p-xl lg:px-[120px] lg:py-[80px] w-full max-w-max-width mx-auto">
+<!-- Header Section -->
+<header class="mb-[80px] max-w-3xl">
+<h2 class="font-display text-display text-primary mb-md">Good Morning, Alex.</h2>
+<p class="font-headline-md text-headline-md text-secondary">You're 82% ready for your Google Interview.</p>
+</header>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-lg lg:gap-[24px]">
+<!-- Main Pebble Card: Readiness Score -->
+<section class="lg:col-span-8 bg-[#F5F5F5] border border-[#E5E5E5] rounded-[32px] p-[40px] flex flex-col justify-between min-h-[300px]">
+<div class="flex justify-between items-start mb-xl">
+<div>
+<h3 class="font-label-bold text-label-bold text-secondary mb-xs">Interview Readiness Score</h3>
+<p class="font-display text-display text-primary">82%</p>
+</div>
+<span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings: 'FILL' 0;">trending_up</span>
+</div>
+<div class="mt-auto">
+<div class="flex justify-between font-label-sm text-label-sm text-secondary mb-sm">
+<span>Current Progress</span>
+<span>Target: 95%</span>
+</div>
+<div class="w-full h-[8px] bg-[#E5E5E5] rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[82%] rounded-full"></div>
+</div>
+<p class="font-body-md text-body-md text-secondary mt-md">System Design remains your primary bottleneck. Focus on scaling architectures.</p>
+</div>
+</section>
+<!-- Secondary Pebble: Upcoming Sessions -->
+<section class="lg:col-span-4 bg-[#F5F5F5] border border-[#E5E5E5] rounded-[32px] p-[32px] flex flex-col">
+<div class="flex items-center gap-sm mb-lg">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 0;">calendar_month</span>
+<h3 class="font-label-bold text-label-bold text-primary">Upcoming Sessions</h3>
+</div>
+<div class="flex flex-col gap-md">
+<div class="flex justify-between items-center py-sm border-b border-[#E5E5E5] last:border-0">
+<div>
+<p class="font-label-bold text-label-bold text-primary">Mock: System Design</p>
+<p class="font-label-sm text-label-sm text-secondary">Today, 4:00 PM</p>
+</div>
+<button class="bg-primary text-on-primary px-3 py-1.5 rounded-full font-label-sm text-label-sm">Join</button>
+</div>
+<div class="flex justify-between items-center py-sm border-b border-[#E5E5E5] last:border-0">
+<div>
+<p class="font-label-bold text-label-bold text-primary">Review: Behavioral</p>
+<p class="font-label-sm text-label-sm text-secondary">Tomorrow, 10:00 AM</p>
+</div>
+<span class="font-label-sm text-label-sm text-secondary">Scheduled</span>
+</div>
+</div>
+</section>
+<!-- Weak Topic Tracker -->
+<section class="lg:col-span-5 bg-[#F5F5F5] border border-[#E5E5E5] rounded-[32px] p-[32px]">
+<div class="flex items-center gap-sm mb-lg">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 0;">troubleshoot</span>
+<h3 class="font-label-bold text-label-bold text-primary">Weak Topic Tracker</h3>
+</div>
+<ul class="flex flex-col gap-md">
+<li class="flex items-center justify-between">
+<span class="font-body-md text-body-md text-primary">System Design: Distributed Cache</span>
+<span class="px-3 py-1 bg-white border border-[#E5E5E5] rounded-full font-label-sm text-label-sm text-error">Low</span>
+</li>
+<li class="flex items-center justify-between">
+<span class="font-body-md text-body-md text-primary">Algorithms: Dynamic Programming</span>
+<span class="px-3 py-1 bg-white border border-[#E5E5E5] rounded-full font-label-sm text-label-sm text-[#737373]">Medium</span>
+</li>
+<li class="flex items-center justify-between">
+<span class="font-body-md text-body-md text-primary">Behavioral: Conflict Resolution</span>
+<span class="px-3 py-1 bg-white border border-[#E5E5E5] rounded-full font-label-sm text-label-sm text-[#737373]">Medium</span>
+</li>
+</ul>
+</section>
+<!-- Recent History -->
+<section class="lg:col-span-7 bg-[#F5F5F5] border border-[#E5E5E5] rounded-[32px] p-[32px]">
+<div class="flex items-center justify-between mb-lg">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 0;">history</span>
+<h3 class="font-label-bold text-label-bold text-primary">Recent History</h3>
+</div>
+<a class="font-label-sm text-label-sm text-secondary hover:text-primary transition-colors" href="#">View All</a>
+</div>
+<div class="flex flex-col">
+<div class="flex justify-between items-center py-md border-b border-[#E5E5E5] last:border-0">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-white border border-[#E5E5E5] flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 0;">code</span>
+</div>
+<div>
+<p class="font-label-bold text-label-bold text-primary">Algorithms Mock Interview</p>
+<p class="font-label-sm text-label-sm text-secondary">Yesterday • 45 mins</p>
+</div>
+</div>
+<span class="font-label-bold text-label-bold text-primary">88%</span>
+</div>
+<div class="flex justify-between items-center py-md border-b border-[#E5E5E5] last:border-0">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-white border border-[#E5E5E5] flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 0;">architecture</span>
+</div>
+<div>
+<p class="font-label-bold text-label-bold text-primary">System Design Practice</p>
+<p class="font-label-sm text-label-sm text-secondary">Oct 24 • 60 mins</p>
+</div>
+</div>
+<span class="font-label-bold text-label-bold text-primary">74%</span>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- BottomNavBar (MOBILE) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-surface dark:bg-background border-t border-outline-variant dark:border-outline flex justify-around items-center px-container-padding py-md z-10">
+<a class="flex flex-col items-center gap-1 text-primary dark:text-on-background" href="#">
+<span class="material-symbols-outlined" data-icon="home" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-sm text-label-sm">Home</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-secondary dark:text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="settings_voice" style="font-variation-settings: 'FILL' 0;">settings_voice</span>
+<span class="font-label-sm text-label-sm">Chamber</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-secondary dark:text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="analytics" style="font-variation-settings: 'FILL' 0;">analytics</span>
+<span class="font-label-sm text-label-sm">Performance</span>
+</a>
+</nav>
+</body></html>

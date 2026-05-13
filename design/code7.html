@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PrepMate AI - Focus Chamber</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#646464",
+                        "surface-container": "#eeeeee",
+                        "error": "#ba1a1a",
+                        "secondary": "#5e5e5e",
+                        "outline": "#7e7576",
+                        "surface": "#f9f9f9",
+                        "surface-container-low": "#f3f3f3",
+                        "on-tertiary-fixed": "#1b1b1b",
+                        "on-surface-variant": "#4c4546",
+                        "on-surface": "#1a1c1c",
+                        "secondary-fixed-dim": "#c7c6c6",
+                        "inverse-primary": "#c6c6c6",
+                        "on-background": "#1a1c1c",
+                        "surface-container-high": "#e8e8e8",
+                        "on-secondary": "#ffffff",
+                        "primary-container": "#1b1b1b",
+                        "surface-tint": "#5e5e5e",
+                        "on-tertiary-container": "#848484",
+                        "secondary-fixed": "#e3e2e2",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#e2e2e2",
+                        "outline-variant": "#cfc4c5",
+                        "tertiary-container": "#1b1b1b",
+                        "primary-fixed-dim": "#c6c6c6",
+                        "surface-dim": "#dadada",
+                        "on-primary-container": "#848484",
+                        "primary-fixed": "#e2e2e2",
+                        "on-secondary-fixed": "#1b1c1c",
+                        "on-primary": "#ffffff",
+                        "background": "#ffffff", /* Forcing pure white for Level 0 */
+                        "surface-variant": "#e2e2e2",
+                        "primary": "#000000",
+                        "tertiary": "#000000",
+                        "surface-bright": "#f9f9f9",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#464747",
+                        "tertiary-fixed": "#e2e2e2",
+                        "error-container": "#ffdad6",
+                        "secondary-container": "#e3e2e2",
+                        "inverse-surface": "#2f3131",
+                        "on-primary-fixed": "#1b1b1b",
+                        "on-primary-fixed-variant": "#474747",
+                        "inverse-on-surface": "#f1f1f1",
+                        "tertiary-fixed-dim": "#c6c6c6",
+                        "on-tertiary-fixed-variant": "#474747"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sm": "8px",
+                        "max-width": "1200px",
+                        "unit": "8px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "xl": "40px",
+                        "xs": "4px",
+                        "container-padding": "32px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Geist", "sans-serif"],
+                        "label-sm": ["Geist", "sans-serif"],
+                        "display": ["Geist", "sans-serif"],
+                        "headline-md": ["Geist", "sans-serif"],
+                        "headline-lg": ["Geist", "sans-serif"],
+                        "label-bold": ["Geist", "sans-serif"],
+                        "body-lg": ["Geist", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "display": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.03em", "fontWeight": "600" }],
+                        "label-bold": ["14px", { "lineHeight": "1.4", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "letterSpacing": "-0.01em", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-md text-body-md antialiased selection:bg-primary selection:text-on-primary">
+<!-- Focus Chamber Canvas - Suppressing Nav for focused task -->
+<main class="flex-1 flex flex-col max-w-max-width mx-auto w-full px-container-padding relative h-screen">
+<!-- Top: Minimal Timer & Progress -->
+<header class="w-full pt-xl max-w-4xl mx-auto flex flex-col gap-sm">
+<div class="flex justify-between items-end font-label-sm text-label-sm text-secondary uppercase tracking-widest">
+<span>Question 3 of 10</span>
+<span class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'wght' 300;">timer</span>
+                    04:12
+                </span>
+</div>
+<!-- Progress Bar -->
+<div class="w-full h-[2px] bg-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[30%] rounded-full"></div>
+</div>
+</header>
+<!-- Center: The Interview Question -->
+<section class="flex-1 flex flex-col justify-center items-center text-center max-w-3xl mx-auto w-full px-lg my-xl">
+<div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-surface-container-low border border-outline-variant font-label-sm text-label-sm text-secondary mb-xl">
+<span class="material-symbols-outlined text-[16px]">psychology</span>
+                Behavioral
+            </div>
+<h1 class="font-display text-display text-on-background max-w-2xl balance-text">
+                Describe a time when you had to manage a complex project with competing priorities.
+            </h1>
+<p class="font-body-lg text-body-lg text-secondary mt-lg max-w-xl">
+                Walk me through your framework for prioritization and how you communicated trade-offs to stakeholders.
+            </p>
+</section>
+<!-- Bottom: Interaction Area -->
+<section class="w-full max-w-4xl mx-auto pb-xl flex flex-col gap-xl">
+<!-- Confidence Selector -->
+<div class="flex flex-col items-center gap-md">
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest">Pre-Answer Confidence</span>
+<div class="flex gap-md">
+<button class="px-6 py-3 rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface font-label-bold text-label-bold hover:bg-surface-container-low transition-colors">
+                        Low
+                    </button>
+<!-- Active State -->
+<button class="px-6 py-3 rounded-full bg-primary text-on-primary font-label-bold text-label-bold border border-primary">
+                        Medium
+                    </button>
+<button class="px-6 py-3 rounded-full border border-outline-variant bg-surface-container-lowest text-on-surface font-label-bold text-label-bold hover:bg-surface-container-low transition-colors">
+                        High
+                    </button>
+</div>
+</div>
+<!-- Answer Input / Speaking Indicator (Pebble Concept) -->
+<div class="relative w-full rounded-[32px] border border-outline-variant bg-surface-container-low p-container-padding flex flex-col gap-md">
+<textarea class="w-full h-32 bg-transparent border-none outline-none resize-none font-body-lg text-body-lg text-on-surface placeholder:text-outline focus:ring-0 p-0" placeholder="Start speaking, or type your response here..."></textarea>
+<div class="flex justify-between items-center mt-md pt-md border-t border-outline-variant/50">
+<!-- Speaking Indicator -->
+<div class="flex items-center gap-3">
+<div class="flex items-center justify-center w-10 h-10 rounded-full bg-error-container text-on-error-container animate-[pulse_2s_ease-in-out_infinite]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">mic</span>
+</div>
+<span class="font-label-bold text-label-bold text-on-surface-variant">Listening...</span>
+<!-- Audio Waveform Visualization Simulation -->
+<div class="flex items-end gap-1 h-4 ml-2">
+<div class="w-1 bg-on-surface-variant rounded-full h-full animate-[pulse_1s_ease-in-out_infinite]"></div>
+<div class="w-1 bg-on-surface-variant rounded-full h-2/3 animate-[pulse_1.2s_ease-in-out_infinite_0.2s]"></div>
+<div class="w-1 bg-on-surface-variant rounded-full h-4/5 animate-[pulse_0.8s_ease-in-out_infinite_0.4s]"></div>
+<div class="w-1 bg-on-surface-variant rounded-full h-1/2 animate-[pulse_1.5s_ease-in-out_infinite_0.1s]"></div>
+</div>
+</div>
+<!-- Actions -->
+<div class="flex items-center gap-md">
+<button class="px-6 py-3 rounded-full bg-transparent text-primary font-label-bold text-label-bold hover:bg-surface-container-high transition-colors">
+                            Skip
+                        </button>
+<button class="px-8 py-3 rounded-full bg-primary text-on-primary font-label-bold text-label-bold flex items-center gap-2 hover:opacity-90 transition-opacity">
+                            Finish Answer
+                            <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+</main>
+</body></html>

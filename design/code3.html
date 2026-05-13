@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PrepMate AI - Interview Setup</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary": "#ffffff",
+                      "on-secondary-container": "#646464",
+                      "surface-container": "#eeeeee",
+                      "error": "#ba1a1a",
+                      "secondary": "#5e5e5e",
+                      "outline": "#7e7576",
+                      "surface": "#f9f9f9",
+                      "surface-container-low": "#f3f3f3",
+                      "on-tertiary-fixed": "#1b1b1b",
+                      "on-surface-variant": "#4c4546",
+                      "on-surface": "#1a1c1c",
+                      "secondary-fixed-dim": "#c7c6c6",
+                      "inverse-primary": "#c6c6c6",
+                      "on-background": "#1a1c1c",
+                      "surface-container-high": "#e8e8e8",
+                      "on-secondary": "#ffffff",
+                      "primary-container": "#1b1b1b",
+                      "surface-tint": "#5e5e5e",
+                      "on-tertiary-container": "#848484",
+                      "secondary-fixed": "#e3e2e2",
+                      "on-error": "#ffffff",
+                      "on-error-container": "#93000a",
+                      "surface-container-highest": "#e2e2e2",
+                      "outline-variant": "#cfc4c5",
+                      "tertiary-container": "#1b1b1b",
+                      "primary-fixed-dim": "#c6c6c6",
+                      "surface-dim": "#dadada",
+                      "on-primary-container": "#848484",
+                      "primary-fixed": "#e2e2e2",
+                      "on-secondary-fixed": "#1b1c1c",
+                      "on-primary": "#ffffff",
+                      "background": "#f9f9f9",
+                      "surface-variant": "#e2e2e2",
+                      "primary": "#000000",
+                      "tertiary": "#000000",
+                      "surface-bright": "#f9f9f9",
+                      "surface-container-lowest": "#ffffff",
+                      "on-secondary-fixed-variant": "#464747",
+                      "tertiary-fixed": "#e2e2e2",
+                      "error-container": "#ffdad6",
+                      "secondary-container": "#e3e2e2",
+                      "inverse-surface": "#2f3131",
+                      "on-primary-fixed": "#1b1b1b",
+                      "on-primary-fixed-variant": "#474747",
+                      "inverse-on-surface": "#f1f1f1",
+                      "tertiary-fixed-dim": "#c6c6c6",
+                      "on-tertiary-fixed-variant": "#474747"
+              },
+              "borderRadius": {
+                      "DEFAULT": "1rem",
+                      "lg": "2rem",
+                      "xl": "3rem",
+                      "full": "9999px",
+                      "pebble": "32px",
+                      "input": "12px",
+                      "btn": "16px"
+              },
+              "spacing": {
+                      "sm": "8px",
+                      "max-width": "1200px",
+                      "unit": "8px",
+                      "md": "16px",
+                      "lg": "24px",
+                      "xl": "40px",
+                      "xs": "4px",
+                      "container-padding": "32px",
+                      "section": "120px",
+                      "pebble": "40px"
+              },
+              "fontFamily": {
+                      "body-md": [
+                              "Geist"
+                      ],
+                      "label-sm": [
+                              "Geist"
+                      ],
+                      "display": [
+                              "Geist"
+                      ],
+                      "headline-md": [
+                              "Geist"
+                      ],
+                      "headline-lg": [
+                              "Geist"
+                      ],
+                      "label-bold": [
+                              "Geist"
+                      ],
+                      "body-lg": [
+                              "Geist"
+                      ]
+              },
+              "fontSize": {
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "letterSpacing": "0",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "display": [
+                              "48px",
+                              {
+                                      "lineHeight": "1.1",
+                                      "letterSpacing": "-0.04em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.3",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.03em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "label-bold": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "letterSpacing": "0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+            },
+          }
+        }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.surface');
+            color: theme('colors.on-surface');
+            font-family: 'Geist', sans-serif;
+        }
+        /* Custom Slider Styling to match minimalist aesthetic */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: theme('colors.primary');
+            cursor: pointer;
+            margin-top: -10px;
+            box-shadow: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: theme('colors.surface-variant');
+            border-radius: 2px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+    </style>
+</head>
+<body class="bg-surface antialiased">
+<!-- TopNavBar -->
+<header class="bg-surface border-b border-outline-variant docked full-width top-0 z-50">
+<div class="flex justify-between items-center w-full px-container-padding py-md max-w-max-width mx-auto">
+<div class="flex items-center gap-xl">
+<a class="font-headline-lg text-headline-lg tracking-tighter text-primary" href="#">PrepMate AI</a>
+<nav class="hidden md:flex gap-lg">
+<a class="font-label-bold text-label-bold text-secondary hover:text-primary transition-colors duration-200" href="#">Dashboard</a>
+<a class="font-label-bold text-label-bold text-primary border-b-2 border-primary pb-1" href="#">Practice</a>
+<a class="font-label-bold text-label-bold text-secondary hover:text-primary transition-colors duration-200" href="#">Resources</a>
+<a class="font-label-bold text-label-bold text-secondary hover:text-primary transition-colors duration-200" href="#">History</a>
+</nav>
+</div>
+<div class="flex items-center gap-md">
+<button aria-label="notifications" class="p-unit text-secondary hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button aria-label="settings" class="p-unit text-secondary hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<img alt="User avatar" class="w-10 h-10 rounded-full border border-outline-variant object-cover" data-alt="A close-up portrait of a professional looking individual, well-lit with soft natural light, against a clean minimalist background. The style is modern, sharp, and editorial, suitable for a premium application user profile picture." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXDSMOU5VvDiTjWYplUQfxIX-yCB-2EgaCGsfwxWfp1kWyb4r70Jdjn3afhkEpTLbcuJ4Ure-dMLcwQBZMw6dLSuGS78iBFQ11aWKGCyR1yqdazd5vsR7BRZM69RBnjy6Hqs87o9XM6AX7QP5VewaT-Xx0TRT1-sNUJjWvxKn1W0ZPYKUv8_20T3p2mCueZdXh0VEQK5RC_qoXUbjO12GbYRLA46ffmPVYK_864bltolLctJhhekX-YS9grEvAqjbsf3M1eGXc6rM"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="max-w-max-width mx-auto px-container-padding py-section">
+<div class="mb-xl max-w-2xl">
+<h1 class="font-display text-display text-primary mb-md">Configure Chamber</h1>
+<p class="font-body-lg text-body-lg text-secondary">Define the parameters of your upcoming mock interview. Precision in setup leads to accuracy in performance analysis.</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-lg items-start">
+<!-- Left Column: Settings Cards -->
+<div class="lg:col-span-8 flex flex-col gap-lg">
+<!-- Role & Company Pebble -->
+<section class="bg-[#F5F5F5] border border-[#E5E5E5] rounded-[32px] p-pebble">
+<div class="flex items-center gap-sm mb-lg">
+<span class="material-symbols-outlined text-primary">work</span>
+<h2 class="font-headline-md text-headline-md text-primary">Target Role</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<!-- Role Input -->
+<div>
+<label class="block font-label-bold text-label-bold text-primary mb-sm">Position</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">search</span>
+<input class="w-full bg-[#FFFFFF] border border-[#E5E5E5] rounded-input py-md pl-xl pr-md font-body-md text-body-md text-primary focus:border-primary focus:ring-0 transition-colors" placeholder="e.g. Senior Product Manager" type="text"/>
+</div>
+<div class="flex flex-wrap gap-sm mt-md">
+<button class="bg-[#F5F5F5] border border-[#E5E5E5] rounded-full px-md py-sm font-label-sm text-label-sm text-primary hover:bg-[#E5E5E5] transition-colors">Software Engineer</button>
+<button class="bg-primary text-on-primary rounded-full px-md py-sm font-label-sm text-label-sm transition-colors">Product Manager</button>
+<button class="bg-[#F5F5F5] border border-[#E5E5E5] rounded-full px-md py-sm font-label-sm text-label-sm text-primary hover:bg-[#E5E5E5] transition-colors">Data Scientist</button>
+</div>
+</div>
+<!-- Company Input -->
+<div>
+<label class="block font-label-bold text-label-bold text-primary mb-sm">Target Company</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary">domain</span>
+<input class="w-full bg-[#FFFFFF] border border-[#E5E5E5] rounded-input py-md pl-xl pr-md font-body-md text-body-md text-primary focus:border-primary focus:ring-0 transition-colors" placeholder="e.g. Google, Stripe" type="text"/>
+</div>
+<div class="flex flex-wrap gap-sm mt-md">
+<button class="bg-primary text-on-primary rounded-full px-md py-sm font-label-sm text-label-sm transition-colors">Google</button>
+<button class="bg-[#F5F5F5] border border-[#E5E5E5] rounded-full px-md py-sm font-label-sm text-label-sm text-primary hover:bg-[#E5E5E5] transition-colors">Amazon</button>
+<button class="bg-[#F5F5F5] border border-[#E5E5E5] rounded-full px-md py-sm font-label-sm text-label-sm text-primary hover:bg-[#E5E5E5] transition-colors">Meta</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Interviewer Persona Pebble -->
+<section class="bg-[#F5F5F5] border border-[#E5E5E5] rounded-[32px] p-pebble">
+<div class="flex items-center gap-sm mb-lg">
+<span class="material-symbols-outlined text-primary">psychology</span>
+<h2 class="font-headline-md text-headline-md text-primary">Interviewer Persona</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<!-- Analytical -->
+<label class="relative cursor-pointer">
+<input checked="" class="peer sr-only" name="persona" type="radio"/>
+<div class="bg-[#FFFFFF] border border-primary rounded-input p-lg h-full peer-checked:ring-2 peer-checked:ring-primary transition-all">
+<span class="material-symbols-outlined text-primary mb-sm text-3xl">analytics</span>
+<h3 class="font-label-bold text-label-bold text-primary mb-xs">Analytical</h3>
+<p class="font-label-sm text-label-sm text-secondary">Focuses deeply on frameworks, metrics, and logical deduction.</p>
+</div>
+</label>
+<!-- Challenging -->
+<label class="relative cursor-pointer">
+<input class="peer sr-only" name="persona" type="radio"/>
+<div class="bg-[#FFFFFF] border border-[#E5E5E5] rounded-input p-lg h-full peer-checked:border-primary peer-checked:ring-2 peer-checked:ring-primary transition-all hover:border-[#CCCCCC]">
+<span class="material-symbols-outlined text-primary mb-sm text-3xl">gavel</span>
+<h3 class="font-label-bold text-label-bold text-primary mb-xs">Challenging</h3>
+<p class="font-label-sm text-label-sm text-secondary">Frequently interrupts, questions assumptions, high pressure.</p>
+</div>
+</label>
+<!-- Friendly -->
+<label class="relative cursor-pointer">
+<input class="peer sr-only" name="persona" type="radio"/>
+<div class="bg-[#FFFFFF] border border-[#E5E5E5] rounded-input p-lg h-full peer-checked:border-primary peer-checked:ring-2 peer-checked:ring-primary transition-all hover:border-[#CCCCCC]">
+<span class="material-symbols-outlined text-primary mb-sm text-3xl">handshake</span>
+<h3 class="font-label-bold text-label-bold text-primary mb-xs">Conversational</h3>
+<p class="font-label-sm text-label-sm text-secondary">Warm, encouraging, focuses on behavioral fit and collaboration.</p>
+</div>
+</label>
+</div>
+</section>
+<!-- Difficulty Slider Pebble -->
+<section class="bg-[#F5F5F5] border border-[#E5E5E5] rounded-[32px] p-pebble">
+<div class="flex items-center gap-sm mb-lg">
+<span class="material-symbols-outlined text-primary">tune</span>
+<h2 class="font-headline-md text-headline-md text-primary">Rigor Level</h2>
+</div>
+<div class="px-sm py-md">
+<input class="w-full" max="5" min="1" type="range" value="4"/>
+<div class="flex justify-between mt-md">
+<span class="font-label-sm text-label-sm text-secondary">Baseline</span>
+<span class="font-label-sm text-label-sm text-secondary">Standard</span>
+<span class="font-label-sm text-label-sm text-secondary">Advanced</span>
+<span class="font-label-sm text-label-sm text-primary font-bold">Expert</span>
+<span class="font-label-sm text-label-sm text-secondary">Bar Raiser</span>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Summary & CTA Fixed Panel -->
+<div class="lg:col-span-4 sticky top-[100px]">
+<div class="bg-[#FFFFFF] border border-[#E5E5E5] rounded-[32px] p-pebble shadow-sm">
+<h3 class="font-headline-md text-headline-md text-primary mb-xl border-b border-[#E5E5E5] pb-md">Session Overview</h3>
+<ul class="flex flex-col gap-md mb-xl">
+<li class="flex justify-between items-center">
+<span class="font-body-md text-body-md text-secondary">Role</span>
+<span class="font-label-bold text-label-bold text-primary">Product Manager</span>
+</li>
+<li class="flex justify-between items-center">
+<span class="font-body-md text-body-md text-secondary">Target</span>
+<span class="font-label-bold text-label-bold text-primary">Google</span>
+</li>
+<li class="flex justify-between items-center">
+<span class="font-body-md text-body-md text-secondary">Persona</span>
+<span class="font-label-bold text-label-bold text-primary">Analytical</span>
+</li>
+<li class="flex justify-between items-center">
+<span class="font-body-md text-body-md text-secondary">Rigor</span>
+<span class="font-label-bold text-label-bold text-primary">Expert (L4)</span>
+</li>
+<li class="flex justify-between items-center">
+<span class="font-body-md text-body-md text-secondary">Est. Duration</span>
+<span class="font-label-bold text-label-bold text-primary">45 Mins</span>
+</li>
+</ul>
+<button class="w-full bg-primary text-on-primary font-label-bold text-label-bold py-lg rounded-btn hover:bg-surface-tint transition-colors flex items-center justify-center gap-sm">
+<span class="material-symbols-outlined">play_arrow</span>
+                        Start Mock Interview
+                    </button>
+<p class="font-label-sm text-label-sm text-center text-secondary mt-md">Microphone access will be required on the next screen.</p>
+</div>
+</div>
+</div>
+</main>
+</body></html>
