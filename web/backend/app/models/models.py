@@ -35,6 +35,8 @@ class Resume(Base):
     file_size = Column(Integer, nullable=False)
     skills = Column(JSON, default=list)
     experience = Column(JSON, default=list)
+    parsed_text = Column(Text, nullable=True)
+    analysis = Column(JSON, nullable=True)
     uploaded_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="resumes")

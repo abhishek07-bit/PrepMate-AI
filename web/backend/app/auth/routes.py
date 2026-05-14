@@ -41,17 +41,46 @@ def create_access_token(data: dict):
 
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    import firebase_admin
+    from firebase_admin import auth as firebase_auth
+    
+    user_id = None
+    email = None
+    
+    # 1. Try Firebase Verification
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
+        decoded_token = firebase_auth.verify_id_token(token)
+        user_id = decoded_token.get("uid")
+        email = decoded_token.get("email")
+    except Exception:
+        # 2. Fallback to Local JWT
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+            user_id = payload.get("sub")
+        except JWTError:
             raise HTTPException(status_code=401, detail="Invalid token")
-    except JWTError:
+
+    if user_id is None:
         raise HTTPException(status_code=401, detail="Invalid token")
 
     user = db.query(User).filter(User.id == user_id).first()
+    
+    # 3. Just-in-time user creation (for Social Login / Firebase users)
+    if user is None and email:
+        user = User(
+            id=user_id,
+            email=email,
+            hashed_password="EXTERNAL_AUTH",
+            first_name=email.split('@')[0],
+            last_name="",
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    
     if user is None:
         raise HTTPException(status_code=401, detail="User not found")
+    
     return user
 
 

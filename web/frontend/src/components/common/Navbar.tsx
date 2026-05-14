@@ -11,6 +11,7 @@ import Shuffle from './Shuffle';
 const drawerLinks = [
   { label: 'Dashboard', path: '/dashboard', icon: Home },
   { label: 'Practice', path: '/interview/setup', icon: Mic },
+  { label: 'Company Prep', path: '/company-prep', icon: FileText },
   { label: 'Analytics', path: '/analytics', icon: BarChart3 },
   { label: 'Resume', path: '/resume', icon: Upload },
   { label: 'Settings', path: '/settings', icon: Settings },
@@ -71,12 +72,12 @@ export default function Navbar() {
   return (
     <>
       {/* Main Navbar */}
-      <header className="bg-surface-container-lowest/80 backdrop-blur-md w-full px-lg md:px-container-padding py-md sticky top-0 z-40 border-b border-outline-variant">
+      <header className="bg-surface-container-lowest w-full px-lg md:px-container-padding py-md sticky top-0 z-40 border-b border-outline-variant">
         <div className="flex justify-between items-center max-w-max-width mx-auto w-full">
           {/* Left: Logo (Now using Shuffle) */}
           <div className="flex items-center gap-xl">
             <Link to={isAuthenticated ? '/dashboard' : '/'} className="flex items-center gap-sm group">
-              <Layers size={24} className="text-primary group-hover:scale-110 transition-transform duration-300" strokeWidth={1.5} />
+              <Layers size={24} className="text-primary group-hover:scale-105 transition-transform duration-300" strokeWidth={1.5} />
               <Shuffle
                 text="PrepMate AI"
                 className="font-headline-md tracking-tighter text-primary font-semibold"
@@ -90,7 +91,7 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Right: Theme + Profile + Hamburger (No other links) */}
+          {/* Right: Theme + Profile + Hamburger */}
           <div className="flex items-center gap-sm">
             {/* Theme Toggle */}
             <button
@@ -115,28 +116,16 @@ export default function Navbar() {
 
                 {/* Profile Dropdown */}
                 {profileOpen && (
-                  <div className="absolute right-0 top-12 w-56 bg-surface-container-lowest border border-outline-variant rounded-pebble shadow-2xl py-sm z-50 animate-in fade-in slide-in-from-top-2">
-                    <div className="px-md py-sm border-b border-outline-variant mb-xs">
-                      <p className="font-label-bold text-label-bold text-primary truncate">{user?.firstName} {user?.lastName}</p>
-                      <p className="font-label-sm text-label-sm text-secondary truncate">{user?.email}</p>
+                  <div className="absolute right-0 top-12 w-48 bg-surface-container-lowest border border-outline-variant rounded-[16px] shadow-2xl py-xs z-50 animate-fade-in">
+                    <div className="px-md py-xs border-b border-outline-variant mb-xs">
+                      <p className="font-label-bold text-label-sm text-primary truncate">{user?.firstName} {user?.lastName}</p>
+                      <p className="font-label-sm text-[11px] text-secondary truncate">{user?.email}</p>
                     </div>
-                    <Link
-                      to="/settings"
-                      className="flex items-center gap-sm px-md py-sm text-secondary hover:text-primary hover:bg-surface-container-low transition-colors font-label-bold text-label-sm"
-                    >
-                      <Settings size={16} strokeWidth={1.5} /> Settings
-                    </Link>
-                    <Link
-                      to="/resume"
-                      className="flex items-center gap-sm px-md py-sm text-secondary hover:text-primary hover:bg-surface-container-low transition-colors font-label-bold text-label-sm"
-                    >
-                      <FileText size={16} strokeWidth={1.5} /> Resume
-                    </Link>
                     <button
                       onClick={handleLogout}
-                      className="flex items-center gap-sm px-md py-sm text-error hover:bg-error-container transition-colors font-label-bold text-label-sm w-full text-left"
+                      className="flex items-center gap-sm px-md py-xs text-error hover:bg-error-container transition-colors font-label-bold text-label-sm w-full text-left rounded-b-[16px]"
                     >
-                      <LogOut size={16} strokeWidth={1.5} /> Sign Out
+                      <LogOut size={14} strokeWidth={1.5} /> Sign Out
                     </button>
                   </div>
                 )}
@@ -150,92 +139,87 @@ export default function Navbar() {
               </Link>
             )}
 
-            {/* Hamburger */}
+            {/* Hamburger - visible on ALL screens */}
             <button
               onClick={() => setDrawerOpen(!drawerOpen)}
               aria-label={drawerOpen ? 'Close menu' : 'Open menu'}
-              className="w-10 h-10 flex items-center justify-center rounded-full text-secondary hover:text-primary hover:bg-surface-container-low transition-colors"
+              className="w-9 h-9 flex items-center justify-center rounded-full text-secondary hover:text-primary hover:bg-surface-container-low transition-colors"
             >
-              {drawerOpen ? <X size={22} strokeWidth={1.5} /> : <Menu size={22} strokeWidth={1.5} />}
+              {drawerOpen ? <X size={20} strokeWidth={1.5} /> : <Menu size={20} strokeWidth={1.5} />}
             </button>
           </div>
         </div>
       </header>
 
-      {/* Drawer Overlay */}
-      {drawerOpen && (
-        <div
-          className="fixed inset-0 bg-primary/20 backdrop-blur-sm z-50 animate-in fade-in duration-300"
-          onClick={() => setDrawerOpen(false)}
-        />
-      )}
 
-      {/* Slide-down Premium Drawer */}
+      {/* Curtain Drawer */}
       <aside
-        className={`fixed top-0 left-0 w-full bg-surface-container-lowest/95 backdrop-blur-3xl border-b border-outline-variant shadow-2xl rounded-b-[40px] z-[60] transform transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        className={`fixed inset-0 w-full h-screen bg-surface-container-lowest z-[60] flex flex-col transform transition-transform duration-500 ease-in-out ${
           drawerOpen ? 'translate-y-0' : '-translate-y-full'
         }`}
       >
-        <div className="max-w-max-width mx-auto px-lg md:px-container-padding py-xl flex flex-col items-center">
-          
+        {/* Header inside curtain */}
+        <div className="w-full max-w-max-width mx-auto px-lg md:px-container-padding py-md flex justify-between items-center border-b border-outline-variant">
+          <div className="flex items-center gap-sm">
+            <Layers size={24} className="text-primary" strokeWidth={1.5} />
+            <span className="font-headline-md text-primary font-semibold tracking-tighter">PrepMate AI</span>
+          </div>
           <button
             onClick={() => setDrawerOpen(false)}
-            className="absolute top-md right-lg md:right-container-padding w-12 h-12 flex items-center justify-center rounded-full bg-surface-container-high text-primary hover:bg-primary hover:text-on-primary transition-colors"
+            className="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container text-primary hover:bg-primary hover:text-on-primary transition-colors"
           >
             <X size={24} strokeWidth={1.5} />
           </button>
+        </div>
 
-          <div className="flex flex-col items-center gap-md w-full max-w-md mt-xl">
-            {(isAuthenticated ? drawerLinks : [
-              { label: 'Sign In', path: '/login', icon: User },
-              { label: 'Sign Up', path: '/signup', icon: User },
-            ]).map((link, index) => {
-              const Icon = link.icon;
-              const active = isActive(link.path);
-              return (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  onClick={() => setDrawerOpen(false)}
-                  style={{ transitionDelay: `${index * 50}ms` }}
-                  className={`w-full flex items-center justify-center gap-md py-md rounded-pebble transition-all duration-300 ${
-                    active
-                      ? 'bg-primary text-on-primary scale-105 shadow-lg'
-                      : 'text-secondary hover:text-primary hover:bg-surface-container-low hover:scale-105'
-                  } font-headline-md text-headline-md`}
-                >
-                  <Icon size={24} strokeWidth={1.5} />
-                  {link.label}
-                </Link>
-              );
-            })}
+        {/* Links Container (Centered) */}
+        <div className="flex-1 flex flex-col items-center justify-center gap-md px-lg">
+          {(isAuthenticated ? drawerLinks : [
+            { label: 'Sign In', path: '/login', icon: User },
+            { label: 'Sign Up', path: '/signup', icon: User },
+          ]).map((link, index) => {
+            const Icon = link.icon;
+            const active = isActive(link.path);
+            return (
+              <Link
+                key={link.path}
+                to={link.path}
+                onClick={() => setDrawerOpen(false)}
+                className={`flex items-center justify-center gap-md py-sm px-xl rounded-full transition-colors duration-200 ${
+                  active
+                    ? 'bg-primary text-on-primary'
+                    : 'text-secondary hover:text-primary hover:bg-surface-container'
+                } font-display text-headline-lg`}
+              >
+                <Icon size={28} strokeWidth={1.5} />
+                {link.label}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Theme selector at bottom */}
+        <div className="pb-xl w-full max-w-md mx-auto px-lg">
+          <div className="flex w-full bg-surface-container border border-outline-variant rounded-full p-xs">
+            {([
+              { value: 'light' as ThemeMode, label: 'Light', icon: Sun },
+              { value: 'dark' as ThemeMode, label: 'Dark', icon: Moon },
+              { value: 'system' as ThemeMode, label: 'Auto', icon: Monitor },
+            ]).map(({ value, label, icon: Icon }) => (
+              <button
+                key={value}
+                onClick={() => setTheme(value)}
+                className={`flex-1 flex items-center justify-center gap-xs px-sm py-md rounded-full font-label-bold text-label-sm transition-colors ${
+                  theme === value
+                    ? 'bg-primary text-on-primary'
+                    : 'text-secondary hover:text-primary'
+                }`}
+              >
+                <Icon size={18} strokeWidth={1.5} />
+                {label}
+              </button>
+            ))}
           </div>
-
-          {/* Theme selector centered at bottom of drawer */}
-          <div className="mt-xl pt-lg border-t border-outline-variant w-full max-w-sm flex flex-col items-center">
-            <p className="font-label-sm text-label-sm text-secondary mb-md tracking-widest uppercase">Appearance</p>
-            <div className="flex w-full bg-surface-container border border-outline-variant rounded-full p-xs">
-              {([
-                { value: 'light' as ThemeMode, label: 'Light', icon: Sun },
-                { value: 'dark' as ThemeMode, label: 'Dark', icon: Moon },
-                { value: 'system' as ThemeMode, label: 'Auto', icon: Monitor },
-              ]).map(({ value, label, icon: Icon }) => (
-                <button
-                  key={value}
-                  onClick={() => setTheme(value)}
-                  className={`flex-1 flex items-center justify-center gap-xs px-sm py-sm rounded-full font-label-bold text-label-sm transition-all ${
-                    theme === value
-                      ? 'bg-primary text-on-primary shadow-md'
-                      : 'text-secondary hover:text-primary'
-                  }`}
-                >
-                  <Icon size={16} strokeWidth={1.5} />
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
         </div>
       </aside>
     </>

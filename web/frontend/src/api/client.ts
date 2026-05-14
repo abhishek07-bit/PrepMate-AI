@@ -57,6 +57,8 @@ export const resumeAPI = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+  analyze: (resumeId: string) => api.post(`/resume/analyze/${resumeId}`),
+  match: (resumeId: string, jobDescription: string) => api.post(`/resume/match/${resumeId}`, { jobDescription }),
   getSkills: () => api.get('/resume/skills'),
 };
 
@@ -77,4 +79,9 @@ export const analyticsAPI = {
   getReadiness: () => api.get('/analytics/readiness'),
   getWeaknesses: () => api.get('/analytics/weaknesses'),
   getHistory: () => api.get('/analytics/history'),
+};
+
+// Company API
+export const companyAPI = {
+  getPrep: (company: string) => api.get(`/company/${company}`),
 };

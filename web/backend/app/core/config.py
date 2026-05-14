@@ -26,5 +26,8 @@ class Settings:
     UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "./uploads")
     MAX_FILE_SIZE: int = 5 * 1024 * 1024  # 5MB
 
+    # CORS
+    ALLOWED_ORIGINS: list = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:5174,http://localhost:3000,http://127.0.0.1:5173").split(",")
+
 
 settings = Settings()

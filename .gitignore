@@ -9,3 +9,5 @@ env/
 design/
 *.db
 uploads/
+venv/
+*.log

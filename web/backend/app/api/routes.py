@@ -184,3 +184,33 @@ async def get_feedback(
         "sessionId": session_id,
         **feedback,
     }
+
+@router.get("/company/{company_name}")
+async def get_company_prep(
+    company_name: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    try:
+        # We can reuse ai_service to generate this, but for now we'll do a simple mock
+        # if the AI service doesn't have a specific method.
+        # Ideally, we'd add `generate_company_prep` to ai_service.
+        prep = await ai_service.generate_company_prep(company_name)
+    except Exception as e:
+        print(f"Error generating company prep: {e}")
+        # Fallback
+        prep = {
+            "company": company_name,
+            "description": f"A targeted preparation path for {company_name}.",
+            "corePhilosophy": [
+                {"title": "Leadership Principles", "desc": "Focus on data-driven decision making and bias for action.", "icon": "Brain"},
+                {"title": "System Design Focus", "desc": "Expect heavy focus on scalability and high availability.", "icon": "Code"},
+                {"title": "Behavioral Expectations", "desc": "Strong emphasis on conflict resolution and cross-functional collaboration.", "icon": "Globe"}
+            ],
+            "targetedScenarios": [
+                {"title": "Design a globally distributed system.", "category": "System Design", "time": "45 mins", "desc": "Focus on synchronization strategies."},
+                {"title": "Find the longest valid sequence.", "category": "Algorithms", "time": "20 mins", "desc": "Requires dynamic programming."},
+                {"title": "Tell me about a time you failed.", "category": "Behavioral", "time": "15 mins", "desc": "Assess framing of ambiguity and learning."}
+            ]
+        }
+    return prep

@@ -397,6 +397,118 @@ Return ONLY the JSON object."""
     except json.JSONDecodeError:
         return _fallback_feedback()
 
+async def analyze_resume(resume_text: str) -> dict:
+    """Analyze a resume and provide ruthless, hyper-comprehensive feedback including LaTeX checks."""
+    prompt = f"""Act as a Ruthless, World-Class FAANG Recruiter and ATS Optimization Expert. 
+    Your goal is to tear this resume apart and find EVERY single flaw. 
+    
+    SPECIAL INSTRUCTION: Analyze the document's structure. If it appears to be a LaTeX-generated resume, evaluate if the LaTeX-to-PDF conversion has preserved text-searchable layers or if it has created non-standard character encoding that breaks ATS.
+    
+    Resume Text:
+    {resume_text[:5000]}
+    
+    Return a JSON object STRICTLY matching this format:
+    {{
+        "atsScore": integer (0-100),
+        "impactScore": integer (0-100),
+        "brevityScore": integer (0-100),
+        "latexStructureScore": integer (0-100),
+        "overallSummary": string,
+        "voiceSummary": string,
+        "strengths": [array of string],
+        "weaknesses": [array of string],
+        "metricsDetected": [array of string],
+        "allLinksFound": [array of strings (all URLs, social links, portfolio links found anywhere in the text)],
+        "projects": [
+            {{
+                "name": string,
+                "github": string (URL or "Not Found"),
+                "live": string (URL or "Not Found"),
+                "stack": string,
+                "impact": string (1-sentence quantified achievement)
+            }}
+        ],
+        "recommendedRoles": [array of string],
+        "criticalFixes": [array of string]
+    }}
+    
+    Return ONLY the raw JSON string."""
+
+    result = await generate(prompt, SYSTEM_PROMPT_INTERVIEWER, temperature=0.2)
+    try:
+        text = result.text.strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+            if text.endswith("```"):
+                text = text[:-3]
+            text = text.strip()
+            if text.startswith("json"):
+                text = text[4:].strip()
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return {"error": "Failed to parse resume analysis"}
+
+async def analyze_job_match(resume_text: str, job_description: str) -> dict:
+    """Perform 'Kill-Ratio' analysis between a resume and a specific job description."""
+    prompt = f"""Act as a Ruthless FAANG Hiring Manager. Compare this RESUME against the JOB DESCRIPTION.
+    Calculate the 'Kill-Ratio' (Probability of immediate rejection).
+    
+    JOB DESCRIPTION:
+    {job_description[:3000]}
+    
+    RESUME TEXT:
+    {resume_text[:4000]}
+    
+    Return a JSON object:
+    {{
+        "rejectionProbability": integer (0-100, higher means more likely to be rejected),
+        "matchScore": integer (0-100),
+        "topRejectionReasons": [array of 3 brutally honest reasons why this resume would be rejected for THIS specific job],
+        "gapReport": [array of objects with "missingSkill", "importance" (High/Medium), "fixAction"],
+        "killRatioVerdict": string (A ruthless, 1-sentence verdict on the candidate's chances)
+    }}
+    
+    Return ONLY the raw JSON string."""
+
+    result = await generate(prompt, SYSTEM_PROMPT_INTERVIEWER, temperature=0.2)
+    try:
+        text = result.text.strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+            if text.endswith("```"):
+                text = text[:-3]
+            text = text.strip()
+            if text.startswith("json"):
+                text = text[4:].strip()
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return {"error": "Failed to perform job match analysis"}
+
+
+async def generate_company_prep(company_name: str) -> dict:
+    """Generate targeted company interview prep guide."""
+    prompt = f"""Create a targeted interview preparation guide for {company_name}.
+    
+Return a JSON object with:
+- "company": string (the company name)
+- "description": string (1-2 sentences summarizing the interview style)
+- "corePhilosophy": array of 3 objects, each with "title", "desc" (description), and "icon" (string name of a Lucide icon like 'Brain', 'Code', 'Globe', 'Target', 'Zap')
+- "targetedScenarios": array of 3-4 objects, each with "title", "category" (e.g. 'System Design', 'Behavioral'), "time" (e.g. '45 mins'), and "desc" (brief description of what it assesses)
+
+Return ONLY the JSON object."""
+
+    result = await generate(prompt, SYSTEM_PROMPT_INTERVIEWER, temperature=0.7)
+    try:
+        text = result.text.strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+            if text.endswith("```"):
+                text = text[:-3]
+            text = text.strip()
+        return json.loads(text)
+    except json.JSONDecodeError:
+        raise Exception("Failed to parse company prep JSON")
+
 
 def _fallback_questions(role: str, company: str, num: int) -> list[dict]:
     """Hardcoded fallback when AI completely fails."""

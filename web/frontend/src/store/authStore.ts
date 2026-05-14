@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { auth, googleProvider, isFirebaseConfigured } from '../lib/firebase';
+import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, onAuthStateChanged } from 'firebase/auth';
 import type { User } from '../types';
 
 interface AuthState {
@@ -28,8 +29,8 @@ export const useAuthStore = create<AuthState>()(
 
       login: (user, token) => set({ user, token, isAuthenticated: true, loading: false }),
       logout: async () => {
-        if (isSupabaseConfigured()) {
-          await supabase.auth.signOut();
+        if (isFirebaseConfigured()) {
+          await signOut(auth);
         }
         set({ user: null, token: null, isAuthenticated: false });
       },
@@ -40,22 +41,29 @@ export const useAuthStore = create<AuthState>()(
       setLoading: (loading) => set({ loading }),
 
       signInWithGoogle: async () => {
-        if (!isSupabaseConfigured()) {
-          console.warn('[PrepMate] Supabase not configured. Cannot sign in with Google.');
+        if (!isFirebaseConfigured()) {
+          console.warn('[PrepMate] Firebase not configured. Cannot sign in with Google.');
           return;
         }
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: `${window.location.origin}/dashboard`,
-          },
-        });
-        if (error) console.error('Google sign-in error:', error.message);
+        try {
+          const result = await signInWithPopup(auth, googleProvider);
+          const token = await result.user.getIdToken();
+          const user = result.user;
+          get().login({
+            id: user.uid,
+            email: user.email || '',
+            firstName: user.displayName?.split(' ')[0] || '',
+            lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+            avatarUrl: user.photoURL || undefined,
+            createdAt: user.metadata.creationTime || new Date().toISOString(),
+          }, token);
+        } catch (error: any) {
+          console.error('Google sign-in error:', error.message);
+        }
       },
 
       signInWithEmail: async (email, password) => {
-        if (!isSupabaseConfigured()) {
-          // Local fallback
+        if (!isFirebaseConfigured()) {
           get().login(
             { id: crypto.randomUUID(), email, firstName: email.split('@')[0], lastName: '', createdAt: new Date().toISOString() },
             `local-${Date.now()}`
@@ -63,28 +71,26 @@ export const useAuthStore = create<AuthState>()(
           return {};
         }
         set({ loading: true });
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
+        try {
+          const result = await signInWithEmailAndPassword(auth, email, password);
+          const token = await result.user.getIdToken();
+          const user = result.user;
+          get().login({
+            id: user.uid,
+            email: user.email || '',
+            firstName: user.displayName?.split(' ')[0] || email.split('@')[0],
+            lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+            createdAt: user.metadata.creationTime || new Date().toISOString(),
+          }, token);
+          return {};
+        } catch (error: any) {
           set({ loading: false });
           return { error: error.message };
         }
-        if (data.user) {
-          get().login(
-            {
-              id: data.user.id,
-              email: data.user.email || email,
-              firstName: data.user.user_metadata?.first_name || email.split('@')[0],
-              lastName: data.user.user_metadata?.last_name || '',
-              createdAt: data.user.created_at,
-            },
-            data.session?.access_token || ''
-          );
-        }
-        return {};
       },
 
       signUpWithEmail: async (email, password, firstName, lastName) => {
-        if (!isSupabaseConfigured()) {
+        if (!isFirebaseConfigured()) {
           get().login(
             { id: crypto.randomUUID(), email, firstName, lastName, createdAt: new Date().toISOString() },
             `local-${Date.now()}`
@@ -92,46 +98,42 @@ export const useAuthStore = create<AuthState>()(
           return {};
         }
         set({ loading: true });
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { first_name: firstName, last_name: lastName },
-          },
-        });
-        if (error) {
+        try {
+          const result = await createUserWithEmailAndPassword(auth, email, password);
+          await updateProfile(result.user, {
+            displayName: `${firstName} ${lastName}`,
+          });
+          const token = await result.user.getIdToken();
+          const user = result.user;
+          get().login({
+            id: user.uid,
+            email: user.email || '',
+            firstName,
+            lastName,
+            createdAt: user.metadata.creationTime || new Date().toISOString(),
+          }, token);
+          return {};
+        } catch (error: any) {
           set({ loading: false });
           return { error: error.message };
         }
-        if (data.user) {
-          get().login(
-            {
-              id: data.user.id,
-              email: data.user.email || email,
-              firstName,
-              lastName,
-              createdAt: data.user.created_at,
-            },
-            data.session?.access_token || ''
-          );
-        }
-        return {};
       },
 
       initAuth: () => {
-        if (!isSupabaseConfigured()) return;
-        supabase.auth.onAuthStateChange((_event, session) => {
-          if (session?.user) {
-            const u = session.user;
+        if (!isFirebaseConfigured()) return;
+        onAuthStateChanged(auth, async (user) => {
+          if (user) {
+            const token = await user.getIdToken();
             set({
               user: {
-                id: u.id,
-                email: u.email || '',
-                firstName: u.user_metadata?.first_name || u.email?.split('@')[0] || '',
-                lastName: u.user_metadata?.last_name || '',
-                createdAt: u.created_at,
+                id: user.uid,
+                email: user.email || '',
+                firstName: user.displayName?.split(' ')[0] || user.email?.split('@')[0] || '',
+                lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+                avatarUrl: user.photoURL || undefined,
+                createdAt: user.metadata.creationTime || new Date().toISOString(),
               },
-              token: session.access_token,
+              token,
               isAuthenticated: true,
               loading: false,
             });

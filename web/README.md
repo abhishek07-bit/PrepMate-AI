@@ -102,11 +102,17 @@ CEREBRAS_API_KEY=your-key
 | Layer | Technology |
 |---|---|
 | Frontend | React 19, TypeScript, Vite 8, Tailwind CSS 3 |
-| State | Zustand |
+| State | Zustand (with persistence) |
 | Routing | React Router v6 |
-| Icons | Lucide React |
-| Forms | React Hook Form |
+| Auth | Firebase Auth & Supabase Auth |
 | HTTP | Axios |
-| Backend | FastAPI, SQLAlchemy, SQLite |
-| Auth | JWT (python-jose) + bcrypt |
-| AI | Gemini, Groq, OpenRouter, Cerebras |
+| Backend | FastAPI, SQLAlchemy, PostgreSQL (Supabase) |
+| Document Parsing | pypdf |
+| AI | Gemini (Primary), Groq, OpenRouter, Cerebras |
+| Deployment | Vercel (Frontend), Render (Backend) |
+
+## Deployment
+
+The project is pre-configured for zero-config deployments.
+- **Frontend**: Connect Vercel to `web/frontend/`. Uses `vercel.json` for SPA routing.
+- **Backend**: Connect Render to `web/backend/`. Uses `render.yaml` for Uvicorn configuration. Ensure you add your production `.env` variables to your cloud host.
