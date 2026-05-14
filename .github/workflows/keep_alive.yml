@@ -9,4 +9,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping Backend
-        run: curl -s https://prepmate-api.onrender.com/api/health
+        run: curl -s https://prepmate-api-47v8.onrender.com/api/health
