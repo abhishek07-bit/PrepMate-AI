@@ -348,16 +348,28 @@ Return a JSON object with:
 Return ONLY the JSON object."""
 
     result = await generate(prompt, SYSTEM_PROMPT_EVALUATOR, temperature=0.4)
+    text = result.text.strip()
+    
     try:
-        text = result.text.strip()
-        if text.startswith("```"):
-            text = text.split("\n", 1)[1] if "\n" in text else text[3:]
-            if text.endswith("```"):
-                text = text[:-3]
-            text = text.strip()
+        # Robust JSON extraction: Find the first '{' and last '}'
+        start_idx = text.find('{')
+        end_idx = text.rfind('}')
+        if start_idx != -1 and end_idx != -1:
+            json_str = text[start_idx:end_idx + 1]
+            return json.loads(json_str)
+        
+        # If no braces found, try raw parse
         return json.loads(text)
     except json.JSONDecodeError:
-        return {"score": 70, "feedback": "Response recorded.", "strengths": [], "improvements": []}
+        logger.error(f"Failed to parse AI evaluation JSON. Raw text: {text}")
+        # Return a low score if the AI was critical but failed JSON, 
+        # or a neutral score with the raw text as feedback
+        return {
+            "score": 40, 
+            "feedback": text[:300] if len(text) > 10 else "Answer processed with technical parsing error.", 
+            "strengths": [], 
+            "improvements": ["Try to provide a more structured response."]
+        }
 
 
 async def generate_session_feedback(
@@ -386,15 +398,19 @@ Return a JSON object with:
 Return ONLY the JSON object."""
 
     result = await generate(prompt, SYSTEM_PROMPT_EVALUATOR, temperature=0.5)
+    text = result.text.strip()
+    
     try:
-        text = result.text.strip()
-        if text.startswith("```"):
-            text = text.split("\n", 1)[1] if "\n" in text else text[3:]
-            if text.endswith("```"):
-                text = text[:-3]
-            text = text.strip()
+        # Robust JSON extraction
+        start_idx = text.find('{')
+        end_idx = text.rfind('}')
+        if start_idx != -1 and end_idx != -1:
+            json_str = text[start_idx:end_idx + 1]
+            return json.loads(json_str)
+            
         return json.loads(text)
     except json.JSONDecodeError:
+        logger.error(f"Failed to parse session feedback JSON. Raw text: {text}")
         return _fallback_feedback()
 
 async def analyze_resume(resume_text: str) -> dict:

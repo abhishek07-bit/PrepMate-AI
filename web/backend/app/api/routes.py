@@ -123,14 +123,14 @@ async def submit_answer(
             company=session.company if session else "Tech Company",
         )
     except Exception:
-        evaluation = {"score": 70, "feedback": "Response recorded.", "strengths": [], "improvements": []}
+        evaluation = {"score": 40, "feedback": "Answer processed with minor technical delay.", "strengths": [], "improvements": []}
 
     answer = Answer(
         question_id=question_id,
         text=req.text,
         confidence=req.confidence,
         duration=req.duration,
-        score=evaluation.get("score", 70),
+        score=evaluation.get("score", 40),
         feedback_text=evaluation.get("feedback", ""),
     )
     db.add(answer)
