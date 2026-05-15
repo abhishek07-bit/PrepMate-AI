@@ -85,6 +85,7 @@ export default function Navbar() {
                 duration={0.4}
                 stagger={0.04}
                 animationMode="evenodd"
+                threshold={0}
                 loop={true}
                 loopDelay={2}
               />
