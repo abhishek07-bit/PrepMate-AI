@@ -507,7 +507,7 @@ Return ONLY the JSON object."""
             text = text.strip()
         return json.loads(text)
     except json.JSONDecodeError:
-        raise Exception("Failed to parse company prep JSON")
+        raise AIProviderError("all", "Failed to parse company prep JSON")
 
 
 def _fallback_questions(role: str, company: str, num: int) -> list[dict]:

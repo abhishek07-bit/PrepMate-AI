@@ -31,3 +31,7 @@ class Settings:
 
 
 settings = Settings()
+
+if os.getenv("NODE_ENV", "development") == "production" and settings.SECRET_KEY == "prepmate-secret-key-change-in-production":
+    raise ValueError("FATAL: Insecure SECRET_KEY used in production. Please set SECRET_KEY in your environment variables.")
+

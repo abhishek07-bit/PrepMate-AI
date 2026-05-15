@@ -44,25 +44,33 @@ async def upload_resume(
     extracted_skills = []
     parsed_text_str = ""
     
+    import asyncio
+    
+    def extract_pdf_text(b_content):
+        text = ""
+        reader = PdfReader(io.BytesIO(b_content))
+        for page in reader.pages:
+            text += page.extract_text() + " "
+        return text
+
+    def extract_docx_text(b_content):
+        from docx import Document
+        doc = Document(io.BytesIO(b_content))
+        return " ".join([p.text for p in doc.paragraphs])
+
     # Real PDF parsing
     if file.filename.lower().endswith(".pdf"):
         try:
-            reader = PdfReader(io.BytesIO(content))
-            for page in reader.pages:
-                parsed_text_str += page.extract_text() + " "
+            parsed_text_str = await asyncio.get_event_loop().run_in_executor(None, extract_pdf_text, content)
         except Exception as e:
-            print(f"Failed to parse PDF: {e}")
-            extracted_skills = ["Parsing Error"]
+            raise HTTPException(status_code=422, detail="Failed to parse PDF document.")
             
     # Real DOCX parsing
     elif file.filename.lower().endswith(".docx"):
         try:
-            from docx import Document
-            doc = Document(io.BytesIO(content))
-            parsed_text_str = " ".join([p.text for p in doc.paragraphs])
+            parsed_text_str = await asyncio.get_event_loop().run_in_executor(None, extract_docx_text, content)
         except Exception as e:
-            print(f"Failed to parse DOCX: {e}")
-            extracted_skills = ["Parsing Error"]
+            raise HTTPException(status_code=422, detail="Failed to parse DOCX document.")
 
     if parsed_text_str:
         text_lower = parsed_text_str.lower()
