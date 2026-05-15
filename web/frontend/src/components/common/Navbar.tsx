@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Sun, Moon, Monitor, User, Menu, X, Layers,
-  Home, Mic, BarChart3, Upload, Settings, LogOut, FileText, ChevronDown, Zap
+  Home, Mic, BarChart3, Upload, Settings, LogOut, FileText, ChevronDown, Zap, Activity
 } from 'lucide-react';
 import { useSettingsStore, type ThemeMode } from '../../store/settingsStore';
 import { useAuthStore } from '../../store/authStore';
@@ -69,49 +69,60 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="glass sticky top-0 z-50 px-6 py-4 border-b border-outline-variant/30">
+      <header className="glass sticky top-0 z-50 px-8 py-5 border-b border-outline-variant/30 backdrop-blur-xl">
         <div className="flex justify-between items-center max-w-7xl mx-auto w-full">
           {/* Logo */}
-          <div className="flex items-center gap-12">
-            <Link to={isAuthenticated ? '/dashboard' : '/'} className="flex items-center gap-3 group">
-              <div className="bg-primary p-1.5 rounded-lg rotate-3 group-hover:rotate-0 transition-transform">
-                <Zap size={20} className="text-on-primary" />
+          <div className="flex items-center gap-16">
+            <Link to={isAuthenticated ? '/dashboard' : '/'} className="flex items-center gap-4 group">
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg group-hover:blur-xl transition-all" />
+                <div className="relative bg-primary p-2 rounded-xl rotate-3 group-hover:rotate-0 transition-all duration-500 shadow-lg">
+                  <Zap size={22} className="text-on-primary" />
+                </div>
               </div>
               <Shuffle
                 text="PrepMate AI"
-                className="font-display text-2xl tracking-tighter text-primary font-bold"
+                className="font-display text-3xl tracking-tight text-primary font-bold italic"
                 shuffleDirection="down"
-                duration={0.4}
-                stagger={0.04}
+                duration={0.5}
+                stagger={0.05}
                 animationMode="evenodd"
                 threshold={0}
                 loop={true}
-                loopDelay={3}
+                loopDelay={4}
               />
             </Link>
 
-            {/* Desktop Nav */}
+            {/* Desktop Nav: Tactical Links */}
             {isAuthenticated && (
-              <nav className="hidden lg:flex items-center gap-8">
-                {drawerLinks.slice(0, 4).map((link) => (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    className={`font-label-bold text-xs uppercase tracking-widest transition-colors ${
-                      isActive(link.path) ? 'text-primary' : 'text-secondary hover:text-primary'
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+              <nav className="hidden lg:flex items-center gap-10">
+                {drawerLinks.slice(0, 4).map((link) => {
+                  const active = isActive(link.path);
+                  return (
+                    <Link
+                      key={link.path}
+                      to={link.path}
+                      className={`relative font-label-bold text-[10px] uppercase tracking-[0.25em] transition-all py-2 ${
+                        active ? 'text-primary' : 'text-secondary hover:text-primary'
+                      }`}
+                    >
+                      {link.label}
+                      {active && (
+                        <div className="absolute -bottom-1 left-0 w-full h-[2px] bg-primary rounded-full animate-fade-in" />
+                      )}
+                    </Link>
+                  );
+                })}
               </nav>
             )}
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
+            {/* Theme Toggle: Minimalist */}
             <button
               onClick={cycleTheme}
-              className="w-10 h-10 flex items-center justify-center rounded-full text-secondary hover:text-primary hover:bg-surface-container-low transition-all"
+              className="w-10 h-10 flex items-center justify-center rounded-2xl text-secondary hover:text-primary hover:bg-primary/5 transition-all"
+              title="Toggle Intelligence Matrix"
             >
               <ThemeIcon size={20} strokeWidth={1.5} />
             </button>
@@ -120,28 +131,31 @@ export default function Navbar() {
               <div className="relative" ref={profileRef}>
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
-                  className="flex items-center gap-3 pl-3 pr-2 py-1.5 rounded-full bg-surface-container-low border border-outline-variant/30 hover:border-primary/30 transition-all"
+                  className="flex items-center gap-3 pl-3 pr-2 py-2 rounded-2xl glass border border-outline-variant/30 hover:border-primary/40 transition-all shadow-sm"
                 >
-                  <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-bold text-xs">
+                  <div className="w-8 h-8 rounded-xl bg-primary text-on-primary flex items-center justify-center font-display font-bold text-[10px]">
                     {initials}
                   </div>
-                  <ChevronDown size={14} className={`text-secondary transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown size={14} className={`text-secondary transition-transform duration-500 ${profileOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {profileOpen && (
-                  <div className="absolute right-0 top-12 w-56 bg-surface-container-lowest border border-outline-variant/30 rounded-2xl shadow-premium py-2 z-50 animate-scale-in">
-                    <div className="px-4 py-3 border-b border-outline-variant/20 mb-1">
-                      <p className="font-label-bold text-sm text-primary truncate">{user?.firstName} {user?.lastName}</p>
-                      <p className="font-label-sm text-[10px] text-secondary truncate uppercase tracking-widest">{user?.email}</p>
+                  <div className="absolute right-0 top-14 w-64 glass border border-outline-variant/30 rounded-[28px] shadow-premium py-4 z-50 animate-scale-in">
+                    <div className="px-6 py-4 border-b border-outline-variant/20 mb-2">
+                      <p className="font-display font-bold text-base text-primary truncate leading-none mb-2">{user?.firstName} {user?.lastName}</p>
+                      <div className="flex items-center gap-2">
+                        <Activity size={10} className="text-primary animate-pulse" />
+                        <p className="font-label-bold text-[9px] text-secondary truncate uppercase tracking-[0.2em]">{user?.email}</p>
+                      </div>
                     </div>
-                    <Link to="/settings" className="flex items-center gap-3 px-4 py-2.5 text-secondary hover:bg-surface-container-low transition-colors font-label-bold text-xs">
-                      <Settings size={14} /> Profile Settings
+                    <Link to="/settings" className="flex items-center gap-3 px-6 py-3 text-secondary hover:bg-primary/5 hover:text-primary transition-all font-label-bold text-[10px] uppercase tracking-widest">
+                      <Settings size={14} /> Profile Matrix
                     </Link>
                     <button
                       onClick={handleLogout}
-                      className="flex items-center gap-3 px-4 py-2.5 text-red-500 hover:bg-red-50 transition-colors font-label-bold text-xs w-full text-left"
+                      className="flex items-center gap-3 px-6 py-3 text-red-500 hover:bg-red-50 transition-all font-label-bold text-[10px] uppercase tracking-widest w-full text-left"
                     >
-                      <LogOut size={14} /> Sign Out
+                      <LogOut size={14} /> Terminal Exit
                     </button>
                   </div>
                 )}
@@ -149,74 +163,79 @@ export default function Navbar() {
             ) : (
               <Link
                 to="/login"
-                className="hidden md:flex bg-primary text-on-primary font-display font-bold px-8 py-3 rounded-2xl hover:shadow-lg transition-all"
+                className="hidden md:flex bg-primary text-on-primary font-display font-bold px-10 py-3.5 rounded-[20px] shadow-lg shadow-primary/20 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all"
               >
-                Get Started
+                Access Portal
               </Link>
             )}
 
             <button
               onClick={() => setDrawerOpen(!drawerOpen)}
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-low text-primary hover:bg-primary hover:text-on-primary transition-all"
+              className="w-12 h-12 flex items-center justify-center rounded-[18px] bg-primary/5 border border-primary/10 text-primary hover:bg-primary hover:text-on-primary transition-all shadow-sm"
             >
-              {drawerOpen ? <X size={20} /> : <Menu size={20} />}
+              {drawerOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
         </div>
       </header>
 
-      {/* Drawer */}
+      {/* Cinematic Drawer Overlay */}
       <aside
-        className={`fixed inset-0 w-full h-screen bg-surface-container-lowest/95 backdrop-blur-2xl z-[60] flex flex-col transform transition-transform duration-500 ease-in-out ${
-          drawerOpen ? 'translate-y-0' : '-translate-y-full'
+        className={`fixed inset-0 w-full h-screen bg-surface-container-lowest/98 backdrop-blur-3xl z-[60] flex flex-col transform transition-all duration-700 ease-in-out ${
+          drawerOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
         }`}
       >
-        <div className="w-full max-w-7xl mx-auto px-6 py-6 flex justify-between items-center border-b border-outline-variant/30">
-          <div className="flex items-center gap-3">
-            <Zap size={24} className="text-primary" />
-            <span className="font-display text-2xl text-primary font-bold tracking-tight">PrepMate AI</span>
+        <div className="w-full max-w-7xl mx-auto px-8 py-8 flex justify-between items-center border-b border-outline-variant/20">
+          <div className="flex items-center gap-4">
+            <div className="bg-primary p-2 rounded-xl">
+              <Zap size={28} className="text-on-primary" />
+            </div>
+            <span className="font-display text-3xl text-primary font-bold italic tracking-tight">PrepMate AI</span>
           </div>
           <button
             onClick={() => setDrawerOpen(false)}
-            className="w-12 h-12 flex items-center justify-center rounded-full bg-primary text-on-primary shadow-lg"
+            className="w-14 h-14 flex items-center justify-center rounded-[24px] bg-primary text-on-primary shadow-2xl shadow-primary/30 group"
           >
-            <X size={24} />
+            <X size={28} className="group-hover:rotate-90 transition-transform" />
           </button>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center gap-8 px-6">
+        <div className="flex-1 flex flex-col items-center justify-center gap-10 px-8">
           {(isAuthenticated ? drawerLinks : [
-            { label: 'Sign In', path: '/login', icon: User },
-            { label: 'Sign Up', path: '/signup', icon: User },
-          ]).map((link) => (
+            { label: 'Access Portal', path: '/login', icon: User },
+            { label: 'Initialize Account', path: '/signup', icon: User },
+          ]).map((link, i) => (
             <Link
               key={link.path}
               to={link.path}
               onClick={() => setDrawerOpen(false)}
-              className={`font-display text-4xl md:text-6xl font-bold transition-all hover:scale-105 ${
-                isActive(link.path) ? 'text-primary' : 'text-outline hover:text-primary'
+              className={`font-display text-5xl md:text-8xl font-bold transition-all hover:scale-105 italic tracking-tighter ${
+                isActive(link.path) ? 'text-primary' : 'text-outline/30 hover:text-primary'
               }`}
+              style={{ transitionDelay: `${i * 0.05}s` }}
             >
               {link.label}
             </Link>
           ))}
         </div>
 
-        <div className="p-12 w-full max-w-md mx-auto">
-          <div className="flex w-full bg-surface-container-low border border-outline-variant/30 rounded-3xl p-1.5">
+        {/* Global Matrix Controller */}
+        <div className="p-16 w-full max-w-lg mx-auto">
+          <div className="flex w-full bg-surface-container-low border border-outline-variant/30 rounded-[32px] p-2 shadow-inner">
             {([
-              { value: 'light' as ThemeMode, icon: Sun },
-              { value: 'dark' as ThemeMode, icon: Moon },
-              { value: 'system' as ThemeMode, icon: Monitor },
-            ]).map(({ value, icon: Icon }) => (
+              { value: 'light' as ThemeMode, icon: Sun, label: 'LUMEN' },
+              { value: 'dark' as ThemeMode, icon: Moon, label: 'VOID' },
+              { value: 'system' as ThemeMode, icon: Monitor, label: 'AUTO' },
+            ]).map(({ value, icon: Icon, label }) => (
               <button
                 key={value}
                 onClick={() => setTheme(value)}
-                className={`flex-1 flex items-center justify-center py-4 rounded-2xl transition-all ${
-                  theme === value ? 'bg-primary text-on-primary shadow-lg' : 'text-secondary hover:text-primary'
+                className={`flex-1 flex flex-col items-center gap-2 py-5 rounded-[24px] transition-all ${
+                  theme === value ? 'bg-primary text-on-primary shadow-2xl scale-[1.02]' : 'text-secondary hover:text-primary'
                 }`}
               >
-                <Icon size={20} />
+                <Icon size={22} />
+                <span className="font-label-bold text-[9px] uppercase tracking-[0.3em]">{label}</span>
               </button>
             ))}
           </div>
