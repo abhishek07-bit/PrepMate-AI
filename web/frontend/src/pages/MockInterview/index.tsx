@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Timer, Brain, ArrowRight, Loader2, Volume2, VolumeX, MessageSquare, Mic, ShieldCheck } from 'lucide-react';
+import { Timer, Brain, ArrowRight, Loader2, Volume2, VolumeX, MessageSquare, Mic, ShieldCheck, MicOff } from 'lucide-react';
 import ProgressBar from '../../components/common/ProgressBar';
 import { useInterviewStore } from '../../store/interviewStore';
 import { interviewAPI } from '../../api/client';
 import { useVoice } from '../../hooks/useVoice';
+import { useSpeechToText } from '../../hooks/useSpeechToText';
 
 type Phase = 'question' | 'evaluating' | 'feedback';
 
@@ -20,6 +21,18 @@ export default function MockInterviewPage() {
   } = useInterviewStore();
 
   const { speak, stop, isSpeaking, isEnabled, toggle } = useVoice({ rate: 0.95, pitch: 1.0 });
+
+  const { 
+    isListening, 
+    transcript, 
+    startListening, 
+    stopListening,
+    isSupported: isSpeechSupported 
+  } = useSpeechToText({
+    onResult: (text) => {
+      setAnswerText(prev => prev + (prev ? ' ' : '') + text);
+    }
+  });
 
   const [confidence, setConfidence] = useState<'low' | 'medium' | 'high'>('medium');
   const [answerText, setAnswerText] = useState('');
@@ -76,6 +89,7 @@ export default function MockInterviewPage() {
 
   const moveToNext = useCallback(() => {
     stop();
+    stopListening();
     const lastScore = currentFeedback?.score || 0;
     setCurrentFeedback(null);
     setPhase('question');
@@ -87,11 +101,12 @@ export default function MockInterviewPage() {
       setTimer(0);
       nextQuestion();
     }
-  }, [isLastQuestion, stop, nextQuestion, endSession, navigate, sessionId, currentFeedback]);
+  }, [isLastQuestion, stop, stopListening, nextQuestion, endSession, navigate, sessionId, currentFeedback]);
 
   const handleSubmit = useCallback(async () => {
     if (!currentQuestion || !answerText.trim()) return;
     stop();
+    stopListening();
     setPhase('evaluating');
     setLoading(true);
 
@@ -126,7 +141,15 @@ export default function MockInterviewPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentQuestion, answerText, confidence, timer, addAnswer, stop, isEnabled, speak]);
+  }, [currentQuestion, answerText, confidence, timer, addAnswer, stop, isEnabled, speak, stopListening]);
+
+  const handleMicToggle = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
 
   if (!currentQuestion) return null;
 
@@ -225,14 +248,16 @@ export default function MockInterviewPage() {
           <div className="flex-1 flex flex-col">
             <section className={`flex-1 flex flex-col justify-center items-center text-center max-w-4xl mx-auto w-full px-6 transition-all duration-700 ${questionVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
               
-              {isSpeaking && (
+              {(isSpeaking || isListening) && (
                 <div className="flex items-center gap-3 mb-8 px-4 py-2 rounded-full bg-primary/5 border border-primary/10 animate-fade-in">
                   <div className="flex gap-1 h-3 items-end">
                     {[1, 2, 3, 4].map(i => (
                       <div key={i} className="w-1 bg-primary rounded-full animate-voice-bar" style={{ animationDelay: `${i * 0.1}s` }} />
                     ))}
                   </div>
-                  <span className="text-[10px] font-label-bold text-primary uppercase tracking-widest">AI Synchronizing...</span>
+                  <span className="text-[10px] font-label-bold text-primary uppercase tracking-widest">
+                    {isListening ? 'Neural Listening Active' : 'AI Synchronizing...'}
+                  </span>
                 </div>
               )}
 
@@ -271,23 +296,44 @@ export default function MockInterviewPage() {
               <div className="relative group">
                 <div className="absolute inset-0 bg-primary/5 rounded-[32px] blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
                 <div className="relative bg-surface-container-low border border-outline-variant rounded-[32px] p-8 focus-within:border-primary transition-all shadow-sm">
+                  {isListening && (
+                    <div className="absolute top-4 right-4 flex items-center gap-2 animate-pulse">
+                      <div className="w-2 h-2 rounded-full bg-red-500" />
+                      <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Recording</span>
+                    </div>
+                  )}
                   <textarea
                     ref={textareaRef}
                     className="w-full h-32 bg-transparent border-none outline-none resize-none font-body-lg text-lg text-on-surface placeholder:text-outline/50 focus:ring-0 p-0"
-                    placeholder="Speak or type your strategic response..."
+                    placeholder={isListening ? "Listening to your response..." : "Speak or type your strategic response..."}
                     value={answerText}
                     onChange={(e) => setAnswerText(e.target.value)}
                   />
                   
                   <div className="flex justify-between items-center mt-6 pt-6 border-t border-outline-variant">
-                    <div className="flex items-center gap-2 text-secondary font-label-bold text-[10px] uppercase">
-                      <ShieldCheck size={14} className="text-primary" />
-                      Neural Assessment Ready
+                    <div className="flex items-center gap-4">
+                      {isSpeechSupported && (
+                        <button
+                          onClick={handleMicToggle}
+                          className={`p-3 rounded-full transition-all duration-300 ${
+                            isListening 
+                              ? 'bg-red-500 text-white shadow-lg shadow-red-500/20 scale-110' 
+                              : 'bg-primary/10 text-primary hover:bg-primary hover:text-white'
+                          }`}
+                          title={isListening ? 'Stop Listening' : 'Start Speaking'}
+                        >
+                          {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                        </button>
+                      )}
+                      <div className="flex items-center gap-2 text-secondary font-label-bold text-[10px] uppercase">
+                        <ShieldCheck size={14} className="text-primary" />
+                        Neural Assessment Ready
+                      </div>
                     </div>
                     
                     <div className="flex items-center gap-4">
                       <button 
-                        onClick={() => { stop(); setAnswerText(''); setTimer(0); nextQuestion(); }}
+                        onClick={() => { stop(); stopListening(); setAnswerText(''); setTimer(0); nextQuestion(); }}
                         className="text-secondary font-label-bold text-xs hover:text-primary transition-colors"
                       >
                         Skip Question

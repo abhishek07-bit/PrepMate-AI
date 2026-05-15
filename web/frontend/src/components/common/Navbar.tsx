@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Sun, Moon, Monitor, User, Menu, X, Layers,
-  Home, Mic, BarChart3, Upload, Settings, LogOut, FileText
+  Home, Mic, BarChart3, Upload, Settings, LogOut, FileText, ChevronDown, Zap
 } from 'lucide-react';
 import { useSettingsStore, type ThemeMode } from '../../store/settingsStore';
 import { useAuthStore } from '../../store/authStore';
@@ -34,7 +34,6 @@ export default function Navbar() {
     return location.pathname.startsWith(path);
   };
 
-  // Close profile dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
@@ -45,7 +44,6 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Close drawer on route change
   useEffect(() => {
     setDrawerOpen(false);
     setProfileOpen(false);
@@ -71,62 +69,79 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Main Navbar */}
-      <header className="bg-surface-container-lowest w-full px-lg md:px-container-padding py-md sticky top-0 z-40 border-b border-outline-variant">
-        <div className="flex justify-between items-center max-w-max-width mx-auto w-full">
-          {/* Left: Logo (Now using Shuffle) */}
-          <div className="flex items-center gap-xl">
-            <Link to={isAuthenticated ? '/dashboard' : '/'} className="flex items-center gap-sm group">
-              <Layers size={24} className="text-primary group-hover:scale-105 transition-transform duration-300" strokeWidth={1.5} />
+      <header className="glass sticky top-0 z-50 px-6 py-4 border-b border-outline-variant/30">
+        <div className="flex justify-between items-center max-w-7xl mx-auto w-full">
+          {/* Logo */}
+          <div className="flex items-center gap-12">
+            <Link to={isAuthenticated ? '/dashboard' : '/'} className="flex items-center gap-3 group">
+              <div className="bg-primary p-1.5 rounded-lg rotate-3 group-hover:rotate-0 transition-transform">
+                <Zap size={20} className="text-on-primary" />
+              </div>
               <Shuffle
                 text="PrepMate AI"
-                className="font-headline-md tracking-tighter text-primary font-semibold"
+                className="font-display text-2xl tracking-tighter text-primary font-bold"
                 shuffleDirection="down"
                 duration={0.4}
                 stagger={0.04}
                 animationMode="evenodd"
                 threshold={0}
                 loop={true}
-                loopDelay={2}
+                loopDelay={3}
               />
             </Link>
+
+            {/* Desktop Nav */}
+            {isAuthenticated && (
+              <nav className="hidden lg:flex items-center gap-8">
+                {drawerLinks.slice(0, 4).map((link) => (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    className={`font-label-bold text-xs uppercase tracking-widest transition-colors ${
+                      isActive(link.path) ? 'text-primary' : 'text-secondary hover:text-primary'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+            )}
           </div>
 
-          {/* Right: Theme + Profile + Hamburger */}
-          <div className="flex items-center gap-sm">
-            {/* Theme Toggle */}
+          <div className="flex items-center gap-4">
             <button
               onClick={cycleTheme}
-              aria-label={`Current theme: ${theme}. Click to switch.`}
-              className="w-10 h-10 flex items-center justify-center rounded-full text-secondary hover:text-primary hover:bg-surface-container-low transition-colors"
-              title={`Theme: ${theme}`}
+              className="w-10 h-10 flex items-center justify-center rounded-full text-secondary hover:text-primary hover:bg-surface-container-low transition-all"
             >
               <ThemeIcon size={20} strokeWidth={1.5} />
             </button>
 
-            {/* Profile */}
             {isAuthenticated ? (
               <div className="relative" ref={profileRef}>
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
-                  className="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-bold text-label-bold hover:opacity-90 transition-opacity"
-                  aria-label="Profile menu"
+                  className="flex items-center gap-3 pl-3 pr-2 py-1.5 rounded-full bg-surface-container-low border border-outline-variant/30 hover:border-primary/30 transition-all"
                 >
-                  {initials}
+                  <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center font-label-bold text-xs">
+                    {initials}
+                  </div>
+                  <ChevronDown size={14} className={`text-secondary transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* Profile Dropdown */}
                 {profileOpen && (
-                  <div className="absolute right-0 top-12 w-48 bg-surface-container-lowest border border-outline-variant rounded-[16px] shadow-2xl py-xs z-50 animate-fade-in">
-                    <div className="px-md py-xs border-b border-outline-variant mb-xs">
-                      <p className="font-label-bold text-label-sm text-primary truncate">{user?.firstName} {user?.lastName}</p>
-                      <p className="font-label-sm text-[11px] text-secondary truncate">{user?.email}</p>
+                  <div className="absolute right-0 top-12 w-56 bg-surface-container-lowest border border-outline-variant/30 rounded-2xl shadow-premium py-2 z-50 animate-scale-in">
+                    <div className="px-4 py-3 border-b border-outline-variant/20 mb-1">
+                      <p className="font-label-bold text-sm text-primary truncate">{user?.firstName} {user?.lastName}</p>
+                      <p className="font-label-sm text-[10px] text-secondary truncate uppercase tracking-widest">{user?.email}</p>
                     </div>
+                    <Link to="/settings" className="flex items-center gap-3 px-4 py-2.5 text-secondary hover:bg-surface-container-low transition-colors font-label-bold text-xs">
+                      <Settings size={14} /> Profile Settings
+                    </Link>
                     <button
                       onClick={handleLogout}
-                      className="flex items-center gap-sm px-md py-xs text-error hover:bg-error-container transition-colors font-label-bold text-label-sm w-full text-left rounded-b-[16px]"
+                      className="flex items-center gap-3 px-4 py-2.5 text-red-500 hover:bg-red-50 transition-colors font-label-bold text-xs w-full text-left"
                     >
-                      <LogOut size={14} strokeWidth={1.5} /> Sign Out
+                      <LogOut size={14} /> Sign Out
                     </button>
                   </div>
                 )}
@@ -134,90 +149,74 @@ export default function Navbar() {
             ) : (
               <Link
                 to="/login"
-                className="hidden md:flex bg-primary text-on-primary font-label-bold text-label-bold px-md py-sm rounded-full hover:opacity-90 transition-opacity items-center gap-xs"
+                className="hidden md:flex bg-primary text-on-primary font-display font-bold px-8 py-3 rounded-2xl hover:shadow-lg transition-all"
               >
-                Sign In
+                Get Started
               </Link>
             )}
 
-            {/* Hamburger - visible on ALL screens */}
             <button
               onClick={() => setDrawerOpen(!drawerOpen)}
-              aria-label={drawerOpen ? 'Close menu' : 'Open menu'}
-              className="w-9 h-9 flex items-center justify-center rounded-full text-secondary hover:text-primary hover:bg-surface-container-low transition-colors"
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-low text-primary hover:bg-primary hover:text-on-primary transition-all"
             >
-              {drawerOpen ? <X size={20} strokeWidth={1.5} /> : <Menu size={20} strokeWidth={1.5} />}
+              {drawerOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
           </div>
         </div>
       </header>
 
-
-      {/* Curtain Drawer */}
+      {/* Drawer */}
       <aside
-        className={`fixed inset-0 w-full h-screen bg-surface-container-lowest z-[60] flex flex-col transform transition-transform duration-500 ease-in-out ${
+        className={`fixed inset-0 w-full h-screen bg-surface-container-lowest/95 backdrop-blur-2xl z-[60] flex flex-col transform transition-transform duration-500 ease-in-out ${
           drawerOpen ? 'translate-y-0' : '-translate-y-full'
         }`}
       >
-        {/* Header inside curtain */}
-        <div className="w-full max-w-max-width mx-auto px-lg md:px-container-padding py-md flex justify-between items-center border-b border-outline-variant">
-          <div className="flex items-center gap-sm">
-            <Layers size={24} className="text-primary" strokeWidth={1.5} />
-            <span className="font-headline-md text-primary font-semibold tracking-tighter">PrepMate AI</span>
+        <div className="w-full max-w-7xl mx-auto px-6 py-6 flex justify-between items-center border-b border-outline-variant/30">
+          <div className="flex items-center gap-3">
+            <Zap size={24} className="text-primary" />
+            <span className="font-display text-2xl text-primary font-bold tracking-tight">PrepMate AI</span>
           </div>
           <button
             onClick={() => setDrawerOpen(false)}
-            className="w-12 h-12 flex items-center justify-center rounded-full bg-surface-container text-primary hover:bg-primary hover:text-on-primary transition-colors"
+            className="w-12 h-12 flex items-center justify-center rounded-full bg-primary text-on-primary shadow-lg"
           >
-            <X size={24} strokeWidth={1.5} />
+            <X size={24} />
           </button>
         </div>
 
-        {/* Links Container (Centered) */}
-        <div className="flex-1 flex flex-col items-center justify-center gap-md px-lg">
+        <div className="flex-1 flex flex-col items-center justify-center gap-8 px-6">
           {(isAuthenticated ? drawerLinks : [
             { label: 'Sign In', path: '/login', icon: User },
             { label: 'Sign Up', path: '/signup', icon: User },
-          ]).map((link, index) => {
-            const Icon = link.icon;
-            const active = isActive(link.path);
-            return (
-              <Link
-                key={link.path}
-                to={link.path}
-                onClick={() => setDrawerOpen(false)}
-                className={`flex items-center justify-center gap-md py-sm px-xl rounded-full transition-colors duration-200 ${
-                  active
-                    ? 'bg-primary text-on-primary'
-                    : 'text-secondary hover:text-primary hover:bg-surface-container'
-                } font-display text-headline-lg`}
-              >
-                <Icon size={28} strokeWidth={1.5} />
-                {link.label}
-              </Link>
-            );
-          })}
+          ]).map((link) => (
+            <Link
+              key={link.path}
+              to={link.path}
+              onClick={() => setDrawerOpen(false)}
+              className={`font-display text-4xl md:text-6xl font-bold transition-all hover:scale-105 ${
+                isActive(link.path) ? 'text-primary' : 'text-outline hover:text-primary'
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
         </div>
 
-        {/* Theme selector at bottom */}
-        <div className="pb-xl w-full max-w-md mx-auto px-lg">
-          <div className="flex w-full bg-surface-container border border-outline-variant rounded-full p-xs">
+        <div className="p-12 w-full max-w-md mx-auto">
+          <div className="flex w-full bg-surface-container-low border border-outline-variant/30 rounded-3xl p-1.5">
             {([
-              { value: 'light' as ThemeMode, label: 'Light', icon: Sun },
-              { value: 'dark' as ThemeMode, label: 'Dark', icon: Moon },
-              { value: 'system' as ThemeMode, label: 'Auto', icon: Monitor },
-            ]).map(({ value, label, icon: Icon }) => (
+              { value: 'light' as ThemeMode, icon: Sun },
+              { value: 'dark' as ThemeMode, icon: Moon },
+              { value: 'system' as ThemeMode, icon: Monitor },
+            ]).map(({ value, icon: Icon }) => (
               <button
                 key={value}
                 onClick={() => setTheme(value)}
-                className={`flex-1 flex items-center justify-center gap-xs px-sm py-md rounded-full font-label-bold text-label-sm transition-colors ${
-                  theme === value
-                    ? 'bg-primary text-on-primary'
-                    : 'text-secondary hover:text-primary'
+                className={`flex-1 flex items-center justify-center py-4 rounded-2xl transition-all ${
+                  theme === value ? 'bg-primary text-on-primary shadow-lg' : 'text-secondary hover:text-primary'
                 }`}
               >
-                <Icon size={18} strokeWidth={1.5} />
-                {label}
+                <Icon size={20} />
               </button>
             ))}
           </div>
