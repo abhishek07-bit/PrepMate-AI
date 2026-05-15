@@ -14,6 +14,7 @@ export default function ResumeUploadPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [jobDescription, setJobDescription] = useState('');
+  const [analyzingStep, setAnalyzingStep] = useState<string | null>(null);
 
   // Web Speech API for TTS
   useEffect(() => {
@@ -88,10 +89,25 @@ export default function ResumeUploadPage() {
     if (!id) return;
     setAnalyzing(true);
     setError(null);
+    setAnalyzingStep('Extracting text structure...');
+    
+    // Simulate steps
+    const stepInterval = setInterval(() => {
+      setAnalyzingStep(prev => 
+        prev === 'Extracting text structure...' ? 'Analyzing ATS compatibility...' : 
+        prev === 'Analyzing ATS compatibility...' ? 'Evaluating impact & brevity...' :
+        'Finalizing intelligence report...'
+      );
+    }, 2500);
+
     try {
       const { data } = await resumeAPI.analyze(id);
+      clearInterval(stepInterval);
+      setAnalyzingStep(null);
       setAnalysis(data);
     } catch (err: any) {
+      clearInterval(stepInterval);
+      setAnalyzingStep(null);
       console.error('Analysis failed:', err);
       setError(err.response?.data?.detail || 'Analysis failed. Please try again.');
     } finally {
