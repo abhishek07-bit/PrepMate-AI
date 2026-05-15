@@ -21,6 +21,15 @@ def migrate():
             print("Verified/Added analysis")
     except Exception as e:
         print(f"Error handling analysis: {e}")
+        
+    # Add vocal_confidence_data
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE feedback_reports ADD COLUMN IF NOT EXISTS vocal_confidence_data JSONB;"))
+            conn.commit()
+            print("Verified/Added vocal_confidence_data")
+    except Exception as e:
+        print(f"Error handling vocal_confidence_data: {e}")
             
     print("Done")
 

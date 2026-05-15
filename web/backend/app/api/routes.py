@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from app.db.database import get_db
-from app.models.models import InterviewSession, Question, Answer, User
+from app.models.models import InterviewSession, Question, Answer, User, FeedbackReport
 from app.auth.routes import get_current_user
 from app.services import ai_service
 
@@ -159,7 +159,20 @@ async def get_feedback(
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    # Gather questions and answers
+    # 1. Check if feedback already exists in DB
+    existing_report = db.query(FeedbackReport).filter(FeedbackReport.session_id == session_id).first()
+    if existing_report:
+        return {
+            "sessionId": session_id,
+            "overallScore": existing_report.overall_score,
+            "overallAssessment": existing_report.overall_assessment,
+            "strengths": existing_report.strengths,
+            "improvements": existing_report.improvements,
+            "recommendedActions": existing_report.recommended_actions,
+            "vocalConfidenceData": existing_report.vocal_confidence_data if hasattr(existing_report, 'vocal_confidence_data') else []
+        }
+
+    # 2. Gather questions and answers for AI analysis
     questions = db.query(Question).filter(Question.session_id == session_id).order_by(Question.order_num).all()
     question_ids = [q.id for q in questions]
     answers = db.query(Answer).filter(Answer.question_id.in_(question_ids)).all()
@@ -174,7 +187,7 @@ async def get_feedback(
             "answer": answer.text if answer else "No answer provided.",
         })
 
-    # Generate AI feedback
+    # 3. Generate AI feedback
     try:
         feedback = await ai_service.generate_session_feedback(
             questions_and_answers=qa_pairs,
@@ -183,6 +196,24 @@ async def get_feedback(
         )
     except Exception:
         feedback = ai_service._fallback_feedback()
+
+    # 4. SAVE to Database
+    new_report = FeedbackReport(
+        session_id=session_id,
+        overall_score=feedback.get("overallScore", 0),
+        overall_assessment=feedback.get("overallAssessment", ""),
+        strengths=feedback.get("strengths", []),
+        improvements=feedback.get("improvements", []),
+        recommended_actions=feedback.get("recommendedActions", []),
+        vocal_confidence_data=feedback.get("vocalConfidenceData", [])
+    )
+    db.add(new_report)
+    
+    # 5. Update Session Status and Score for Analytics
+    session.score = feedback.get("overallScore", 0)
+    session.status = "completed"
+    
+    db.commit()
 
     return {
         "sessionId": session_id,

@@ -340,7 +340,7 @@ Question: {question}
 Candidate's Answer: {answer}
 
 Return a JSON object with:
-- "score": integer 0-100
+- "score": integer 0-100 (Be critical. 90+ is for perfect, senior-level answers. 50-70 is for average. <40 is for poor answers.)
 - "feedback": a 2-3 sentence evaluation
 - "strengths": array of 1-3 strength points
 - "improvements": array of 1-3 improvement suggestions
@@ -376,7 +376,7 @@ async def generate_session_feedback(
 {qa_text}
 
 Return a JSON object with:
-- "overallScore": integer 0-100
+- "overallScore": integer 0-100 (Calculate this based on individual answers, rigor level, and communication quality. Be realistic, not generous.)
 - "overallAssessment": 2-3 sentence overall evaluation
 - "strengths": array of objects with "title" and "description" (3 items)
 - "improvements": array of objects with "title" and "description" (3 items)
