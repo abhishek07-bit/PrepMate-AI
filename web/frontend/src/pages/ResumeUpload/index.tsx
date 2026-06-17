@@ -75,7 +75,9 @@ export default function ResumeUploadPage() {
       setError('File too large. Maximum 5MB.');
       return;
     }
-    if (!selectedFile.name.toLowerCase().match(/\.(pdf|docx)$/)) {
+    const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
+    const validExtension = selectedFile.name.toLowerCase().match(/\.(pdf|docx)$/);
+    if (!validExtension && !validTypes.includes(selectedFile.type)) {
       setError('Only PDF and DOCX files are supported.');
       return;
     }
@@ -235,14 +237,13 @@ export default function ResumeUploadPage() {
                 </button>
               </div>
             ) : (
-              <div
+              <label
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
                 className={`border border-dashed rounded-pebble p-xl flex flex-col items-center justify-center text-center transition-all cursor-pointer bg-surface hover:bg-surface-container-low gap-lg ${
                   dragOver ? 'border-primary bg-primary/5' : 'border-outline-variant'
-                }`}
+                } block w-full`}
               >
                 {isUploading ? (
                   <div className="flex flex-col items-center gap-md">
@@ -258,9 +259,9 @@ export default function ResumeUploadPage() {
                     </div>
                   </div>
                 )}
-              </div>
+                <input ref={fileInputRef} type="file" accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,.docx" onChange={handleInputChange} className="hidden" />
+              </label>
             )}
-            <input ref={fileInputRef} type="file" accept=".pdf,.docx" onChange={handleInputChange} className="hidden" />
           </article>
 
           {/* Target Card */}
@@ -295,14 +296,13 @@ export default function ResumeUploadPage() {
               </div>
             </div>
           ) : !analysis ? (
-            <div
+            <label
               onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
               onDragLeave={() => setDragOver(false)}
               onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
               className={`border border-dashed rounded-pebble p-xl flex flex-col items-center justify-center text-center transition-all cursor-pointer bg-surface hover:bg-surface-container-low gap-lg ${
                 dragOver ? 'border-primary bg-primary/5' : 'border-outline-variant'
-              }`}
+              } block w-full`}
             >
               {isUploading ? (
                 <div className="flex flex-col items-center gap-md">
@@ -318,7 +318,8 @@ export default function ResumeUploadPage() {
                   </div>
                 </div>
               )}
-            </div>
+              <input type="file" accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,.docx" onChange={handleInputChange} className="hidden" />
+            </label>
           ) : (
             <div className="flex flex-col gap-lg animate-fade-in">
               {/* Score Grid */}
