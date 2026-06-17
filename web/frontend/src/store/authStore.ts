@@ -7,6 +7,42 @@ import { safeId } from '../utils/safeId';
 import { safeStorage } from '../utils/safeStorage';
 import { authAPI } from '../api/client';
 
+// Helper to translate Firebase technical errors to user-friendly messages
+const getAuthErrorMessage = (error: any): string => {
+  if (!error) return 'An unknown error occurred.';
+  
+  const code = error.code || '';
+  const message = error.message || String(error);
+
+  if (code === 'auth/invalid-credential' || code === 'auth/user-not-found' || code === 'auth/wrong-password') {
+    return 'Invalid email or password.';
+  }
+  if (code === 'auth/email-already-in-use') {
+    return 'An account with this email already exists.';
+  }
+  if (code === 'auth/weak-password') {
+    return 'Password is too weak. It must be at least 6 characters.';
+  }
+  if (code === 'auth/invalid-email') {
+    return 'Please enter a valid email address.';
+  }
+  if (code === 'auth/network-request-failed') {
+    return 'Network error. Please check your internet connection.';
+  }
+  if (code === 'auth/too-many-requests') {
+    return 'Too many failed attempts. Please try again later.';
+  }
+  if (code === 'auth/popup-closed-by-user') {
+    return 'Sign-in window was closed before completing.';
+  }
+
+  // Fallback for non-Firebase or unmapped errors
+  if (message.includes('Firebase: Error')) {
+    return 'Authentication failed. Please try again.';
+  }
+  
+  return message;
+};
 
 interface AuthState {
   user: User | null;
@@ -56,7 +92,7 @@ export const useAuthStore = create<AuthState>()(
           await sendPasswordResetEmail(auth, email);
           return {};
         } catch (error: any) {
-          return { error: error.message || 'Failed to send reset email.' };
+          return { error: getAuthErrorMessage(error) };
         }
       },
 
@@ -102,10 +138,9 @@ export const useAuthStore = create<AuthState>()(
             createdAt: user.metadata.creationTime || new Date().toISOString(),
           }, token);
           return {};
-        } catch (error: unknown) {
-          const message = error instanceof Error ? error.message : String(error);
-          console.error('Google sign-in error:', message);
-          return { error: message };
+        } catch (error: any) {
+          console.error('Google sign-in error:', error);
+          return { error: getAuthErrorMessage(error) };
         } finally {
           set({ loading: false });
         }
@@ -127,9 +162,9 @@ export const useAuthStore = create<AuthState>()(
               createdAt: user.metadata.creationTime || new Date().toISOString(),
             }, token);
             return {};
-          } catch (error: unknown) {
+          } catch (error: any) {
             set({ loading: false });
-            return { error: error instanceof Error ? error.message : 'Failed to sign in' };
+            return { error: getAuthErrorMessage(error) };
           }
         }
         
@@ -171,9 +206,9 @@ export const useAuthStore = create<AuthState>()(
               createdAt: user.metadata.creationTime || new Date().toISOString(),
             }, token);
             return {};
-          } catch (error: unknown) {
+          } catch (error: any) {
             set({ loading: false });
-            return { error: error instanceof Error ? error.message : 'Failed to sign up' };
+            return { error: getAuthErrorMessage(error) };
           }
         }
 

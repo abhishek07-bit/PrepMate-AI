@@ -48,7 +48,7 @@ const itemVariants: Variants = {
 export default function CompanyPrepPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialCompany = searchParams.get('company') || 'Google';
+  const initialCompany = searchParams.get('company') || '';
   
   const [company, setCompany] = useState(initialCompany);
   const [searchInput, setSearchInput] = useState(initialCompany);
@@ -56,16 +56,7 @@ export default function CompanyPrepPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      const trimmed = searchInput.trim();
-      if (trimmed && trimmed !== company) {
-        setCompany(trimmed);
-        setSearchParams({ company: trimmed });
-      }
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [searchInput, company, setSearchParams]);
+
 
   useEffect(() => {
     async function fetchData() {
