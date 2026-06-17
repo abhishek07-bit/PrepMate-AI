@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { safeGetItem, safeRemoveItem } from '../utils/safeStorage';
 
-const API_BASE_URL = import.meta.env?.VITE_API_URL || (import.meta.env?.PROD ? '' : 'http://localhost:8000/api');
+// Use window.location.hostname so local network testing on mobile devices routes to the correct computer IP instead of localhost on the phone
+const API_BASE_URL = import.meta.env?.VITE_API_URL || (import.meta.env?.PROD ? '' : `http://${window.location.hostname}:8000/api`);
 
 if (import.meta.env?.PROD && !API_BASE_URL) {
   console.error("CRITICAL: VITE_API_URL is not set in production environment variables.");
