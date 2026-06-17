@@ -9,11 +9,11 @@ services:
         value: 10000
       - key: DATABASE_URL
         sync: false
-      - key: SUPABASE_URL
+      - key: SECRET_KEY
         sync: false
-      - key: SUPABASE_KEY
+      - key: ALLOWED_ORIGINS
         sync: false
-      - key: OPENAI_API_KEY
+      - key: GEMINI_API_KEY
         sync: false
       - key: GROQ_API_KEY
         sync: false
@@ -21,7 +21,7 @@ services:
         sync: false
       - key: CEREBRAS_API_KEY
         sync: false
-      - key: GEMINI_API_KEY
+      - key: FIREBASE_SERVICE_ACCOUNT
         sync: false
-      - key: ENVIRONMENT
+      - key: NODE_ENV
         value: production

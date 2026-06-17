@@ -288,6 +288,19 @@ You provide specific, actionable feedback. Be honest but constructive.
 Always respond with valid JSON when asked for structured output."""
 
 
+def _extract_json(text: str) -> str:
+    """Helper to robustly strip markdown code fences and json prefixes from LLM outputs."""
+    text = text.strip()
+    if text.startswith("```"):
+        text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+        if text.endswith("```"):
+            text = text[:-3]
+        text = text.strip()
+        if text.startswith("json"):
+            text = text[4:].strip()
+    return text
+
+
 async def generate_interview_questions(
     role: str,
     company: str,
@@ -312,16 +325,21 @@ Return a JSON array where each item has:
 Return ONLY the JSON array, no other text."""
 
     result = await generate(prompt, SYSTEM_PROMPT_INTERVIEWER, temperature=0.8)
-    # Strip markdown code fences if present
-    text = result.text.strip()
-    if text.startswith("```"):
-        text = text.split("\n", 1)[1] if "\n" in text else text[3:]
-        if text.endswith("```"):
-            text = text[:-3]
-        text = text.strip()
+    text = _extract_json(result.text)
     
-    questions = json.loads(text)
-    return questions if isinstance(questions, list) else []
+    try:
+        questions = json.loads(text)
+        return questions if isinstance(questions, list) else []
+    except json.JSONDecodeError:
+        # Fallback to some generic questions if JSON parsing fails
+        return [
+            {
+                "category": "Behavioral",
+                "text": "Tell me about your experience and background.",
+                "sub_prompt": "Focus on your recent roles.",
+                "time_limit": 180
+            }
+        ]
 
 
 async def evaluate_answer(
@@ -345,7 +363,7 @@ Return a JSON object with:
 Return ONLY the JSON object."""
 
     result = await generate(prompt, SYSTEM_PROMPT_EVALUATOR, temperature=0.4)
-    text = result.text.strip()
+    text = _extract_json(result.text)
     
     try:
         # Robust JSON extraction: Find the first '{' and last '}'
@@ -388,7 +406,7 @@ Return a JSON object with:
 Return ONLY the JSON object."""
 
     result = await generate(prompt, SYSTEM_PROMPT_EVALUATOR, temperature=0.5)
-    text = result.text.strip()
+    text = _extract_json(result.text)
     
     try:
         # Robust JSON extraction
@@ -442,14 +460,7 @@ async def analyze_resume(resume_text: str) -> dict:
 
     result = await generate(prompt, SYSTEM_PROMPT_INTERVIEWER, temperature=0.2)
     try:
-        text = result.text.strip()
-        if text.startswith("```"):
-            text = text.split("\n", 1)[1] if "\n" in text else text[3:]
-            if text.endswith("```"):
-                text = text[:-3]
-            text = text.strip()
-            if text.startswith("json"):
-                text = text[4:].strip()
+        text = _extract_json(result.text)
         return json.loads(text)
     except json.JSONDecodeError:
         return {"error": "Failed to parse resume analysis"}
@@ -478,14 +489,7 @@ async def analyze_job_match(resume_text: str, job_description: str) -> dict:
 
     result = await generate(prompt, SYSTEM_PROMPT_INTERVIEWER, temperature=0.2)
     try:
-        text = result.text.strip()
-        if text.startswith("```"):
-            text = text.split("\n", 1)[1] if "\n" in text else text[3:]
-            if text.endswith("```"):
-                text = text[:-3]
-            text = text.strip()
-            if text.startswith("json"):
-                text = text[4:].strip()
+        text = _extract_json(result.text)
         return json.loads(text)
     except json.JSONDecodeError:
         return {"error": "Failed to perform job match analysis"}
@@ -505,12 +509,7 @@ Return ONLY the JSON object."""
 
     result = await generate(prompt, SYSTEM_PROMPT_INTERVIEWER, temperature=0.7)
     try:
-        text = result.text.strip()
-        if text.startswith("```"):
-            text = text.split("\n", 1)[1] if "\n" in text else text[3:]
-            if text.endswith("```"):
-                text = text[:-3]
-            text = text.strip()
+        text = _extract_json(result.text)
         return json.loads(text)
     except json.JSONDecodeError:
         raise AIProviderError("all", "Failed to parse company prep JSON")

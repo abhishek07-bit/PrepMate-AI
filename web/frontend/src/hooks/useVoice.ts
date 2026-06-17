@@ -7,6 +7,9 @@ interface UseVoiceOptions {
   voiceName?: string;
 }
 
+const isSynthesisSupported =
+  typeof window !== 'undefined' && 'speechSynthesis' in window;
+
 export function useVoice(options: UseVoiceOptions = {}) {
   const { rate = 1.0, pitch = 1.0, volume = 0.9, voiceName } = options;
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -15,12 +18,21 @@ export function useVoice(options: UseVoiceOptions = {}) {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
   useEffect(() => {
+    if (!isSynthesisSupported) return;
     const loadVoices = () => {
-      setVoices(window.speechSynthesis.getVoices());
+      try {
+        setVoices(window.speechSynthesis.getVoices());
+      } catch (e) {
+        console.error('[PrepMate] Failed to get speech voices:', e);
+      }
     };
     loadVoices();
-    if (window.speechSynthesis.onvoiceschanged !== undefined) {
-      window.speechSynthesis.onvoiceschanged = loadVoices;
+    try {
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }
+    } catch (e) {
+      console.warn('[PrepMate] Failed to bind onvoiceschanged:', e);
     }
   }, []);
 
@@ -37,33 +49,95 @@ export function useVoice(options: UseVoiceOptions = {}) {
     return preferred || voices.find((v) => v.lang.startsWith('en')) || voices[0];
   }, [voiceName, voices]);
 
+  const resumeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const speak = useCallback(
     (text: string) => {
-      if (!isEnabled || !text.trim()) return;
+      if (!isSynthesisSupported || !isEnabled || !text.trim()) return;
 
-      // Cancel any ongoing speech
-      window.speechSynthesis.cancel();
+      try {
+        // Cancel any ongoing speech
+        window.speechSynthesis.cancel();
 
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = rate;
-      utterance.pitch = pitch;
-      utterance.volume = volume;
+        // Clear any existing iOS resume interval
+        if (resumeIntervalRef.current) {
+          clearInterval(resumeIntervalRef.current);
+          resumeIntervalRef.current = null;
+        }
 
-      const voice = getPreferredVoice();
-      if (voice) utterance.voice = voice;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = rate;
+        utterance.pitch = pitch;
+        utterance.volume = volume;
 
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
+        const voice = getPreferredVoice();
+        if (voice) utterance.voice = voice;
 
-      utteranceRef.current = utterance;
-      window.speechSynthesis.speak(utterance);
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => {
+          setIsSpeaking(false);
+          if (resumeIntervalRef.current) {
+            clearInterval(resumeIntervalRef.current);
+            resumeIntervalRef.current = null;
+          }
+        };
+        utterance.onerror = () => {
+          setIsSpeaking(false);
+          if (resumeIntervalRef.current) {
+            clearInterval(resumeIntervalRef.current);
+            resumeIntervalRef.current = null;
+          }
+        };
+
+        utteranceRef.current = utterance;
+
+        // iOS Safari workaround: speechSynthesis silently pauses after ~15s.
+        // Periodically call resume() to keep it alive.
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+        // Small delay after cancel for iOS compatibility
+        const startSpeaking = () => {
+          window.speechSynthesis.speak(utterance);
+          if (isIOS) {
+            resumeIntervalRef.current = setInterval(() => {
+              if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.pause();
+                window.speechSynthesis.resume();
+              } else {
+                if (resumeIntervalRef.current) {
+                  clearInterval(resumeIntervalRef.current);
+                  resumeIntervalRef.current = null;
+                }
+              }
+            }, 10000);
+          }
+        };
+
+        if (isIOS) {
+          setTimeout(startSpeaking, 100);
+        } else {
+          startSpeaking();
+        }
+      } catch (e) {
+        console.error('[PrepMate] Speech synthesis speak failed:', e);
+        setIsSpeaking(false);
+      }
     },
     [isEnabled, rate, pitch, volume, getPreferredVoice]
   );
 
   const stop = useCallback(() => {
-    window.speechSynthesis.cancel();
+    if (!isSynthesisSupported) return;
+    try {
+      window.speechSynthesis.cancel();
+    } catch (e) {
+      console.error('[PrepMate] Speech synthesis cancel failed:', e);
+    }
+    if (resumeIntervalRef.current) {
+      clearInterval(resumeIntervalRef.current);
+      resumeIntervalRef.current = null;
+    }
     setIsSpeaking(false);
   }, []);
 
@@ -75,9 +149,19 @@ export function useVoice(options: UseVoiceOptions = {}) {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      window.speechSynthesis.cancel();
+      if (isSynthesisSupported) {
+        try {
+          window.speechSynthesis.cancel();
+        } catch (e) {
+          // ignore
+        }
+      }
+      if (resumeIntervalRef.current) {
+        clearInterval(resumeIntervalRef.current);
+        resumeIntervalRef.current = null;
+      }
     };
   }, []);
 
-  return { speak, stop, toggle, isSpeaking, isEnabled, setIsEnabled };
+  return { speak, stop, toggle, isSpeaking, isEnabled, setIsEnabled, isSupported: isSynthesisSupported };
 }

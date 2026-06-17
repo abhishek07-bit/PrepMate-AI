@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Integer, Float, DateTime, Text, ForeignKey, Boolean, JSON
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 from app.db.database import Base
@@ -19,10 +19,10 @@ class User(Base):
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     avatar_url = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
-    resumes = relationship("Resume", back_populates="user")
-    sessions = relationship("InterviewSession", back_populates="user")
+    resumes = relationship("Resume", back_populates="user", cascade="all, delete-orphan")
+    sessions = relationship("InterviewSession", back_populates="user", cascade="all, delete-orphan")
 
 
 class Resume(Base):
@@ -37,7 +37,7 @@ class Resume(Base):
     experience = Column(JSON, default=list)
     parsed_text = Column(Text, nullable=True)
     analysis = Column(JSON, nullable=True)
-    uploaded_at = Column(DateTime, default=datetime.utcnow)
+    uploaded_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="resumes")
 
@@ -54,11 +54,11 @@ class InterviewSession(Base):
     duration = Column(Integer, default=45)
     status = Column(String, default="setup")
     score = Column(Float, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="sessions")
-    questions = relationship("Question", back_populates="session")
-    feedback = relationship("FeedbackReport", back_populates="session", uselist=False)
+    questions = relationship("Question", back_populates="session", cascade="all, delete-orphan")
+    feedback = relationship("FeedbackReport", back_populates="session", uselist=False, cascade="all, delete-orphan")
 
 
 class Question(Base):
@@ -73,7 +73,7 @@ class Question(Base):
     order_num = Column(Integer, nullable=False)
 
     session = relationship("InterviewSession", back_populates="questions")
-    answer = relationship("Answer", back_populates="question", uselist=False)
+    answer = relationship("Answer", back_populates="question", uselist=False, cascade="all, delete-orphan")
 
 
 class Answer(Base):
@@ -86,7 +86,7 @@ class Answer(Base):
     duration = Column(Integer, nullable=False)
     score = Column(Float, nullable=True)
     feedback_text = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     question = relationship("Question", back_populates="answer")
 
@@ -102,6 +102,6 @@ class FeedbackReport(Base):
     improvements = Column(JSON, default=list)
     recommended_actions = Column(JSON, default=list)
     vocal_confidence_data = Column(JSON, default=list)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     session = relationship("InterviewSession", back_populates="feedback")

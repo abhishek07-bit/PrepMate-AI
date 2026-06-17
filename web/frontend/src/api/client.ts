@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { safeGetItem, safeRemoveItem } from '../utils/safeStorage';
 
 const API_BASE_URL = import.meta.env?.VITE_API_URL || (import.meta.env?.PROD ? '' : 'http://localhost:8000/api');
 
@@ -8,6 +9,7 @@ if (import.meta.env?.PROD && !API_BASE_URL) {
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -15,7 +17,7 @@ const api = axios.create({
 
 // Request interceptor to attach JWT token
 api.interceptors.request.use((config) => {
-  const stored = localStorage.getItem('prepmate-auth');
+  const stored = safeGetItem('prepmate-auth');
   if (stored) {
     try {
       const { state } = JSON.parse(stored);
@@ -34,7 +36,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('prepmate-auth');
+      safeRemoveItem('prepmate-auth');
       window.dispatchEvent(new Event('auth-unauthorized'));
     }
     return Promise.reject(error);
@@ -50,6 +52,8 @@ export const authAPI = {
   register: (data: { email: string; password: string; firstName: string; lastName: string }) =>
     api.post('/auth/register', data),
   me: () => api.get('/auth/me'),
+  updateProfile: (data: { firstName: string; lastName: string }) =>
+    api.put('/auth/update-profile', data),
 };
 
 // Resume API
@@ -87,5 +91,5 @@ export const analyticsAPI = {
 
 // Company API
 export const companyAPI = {
-  getPrep: (company: string) => api.get(`/company/${company}`),
+  getPrep: (company: string) => api.get(`/interview/company/${company}`),
 };

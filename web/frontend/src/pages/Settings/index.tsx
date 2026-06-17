@@ -1,11 +1,10 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileText, Trash2, Plus, X, Sun, Moon, Monitor, LogOut, Loader2, ShieldCheck, Zap, User, Target, SlidersHorizontal, Activity } from 'lucide-react';
 import { useSettingsStore, type ThemeMode } from '../../store/settingsStore';
 import { useAuthStore } from '../../store/authStore';
 import { useResumeStore } from '../../store/resumeStore';
 import Toggle from '../../components/common/Toggle';
-import { resumeAPI } from '../../api/client';
+import { resumeAPI, authAPI } from '../../api/client';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -30,11 +29,14 @@ export default function SettingsPage() {
   const [showAddRole, setShowAddRole] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle');
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState(user?.firstName || '');
+  const [lastName, setLastName] = useState(user?.lastName || '');
+  const [isUpdating, setIsUpdating] = useState(false);
   const settingsFileRef = useRef<HTMLInputElement>(null);
 
   const handleSettingsUpload = async (file: File) => {
     if (file.size > 5 * 1024 * 1024) {
-      setUploadError('Artifact size exceeds 5MB limit.');
+      setUploadError('File too large. Max 5MB.');
       return;
     }
     setUploadError(null);
@@ -44,9 +46,10 @@ export default function SettingsPage() {
       const { data } = await resumeAPI.upload(file);
       resume.setParsedData({ skills: data.skills || [], experience: [] });
     } catch (err) {
+      console.error('Upload failed:', err);
       resume.setFile(null);
       resume.setParsedData(null);
-      setUploadError('Artifact uplink failed.');
+      setUploadError('Upload failed. Please try again.');
     } finally {
       resume.setUploading(false);
     }
@@ -56,9 +59,9 @@ export default function SettingsPage() {
     ? `${(user.firstName || '')[0] || ''}${(user.lastName || '')[0] || ''}`.toUpperCase() || '?'
     : '?';
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
   };
 
   const handleAddRole = () => {
@@ -69,125 +72,110 @@ export default function SettingsPage() {
     setShowAddRole(false);
   };
 
-  const themeOptions: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
-    { value: 'light', label: 'Lumen', icon: Sun },
-    { value: 'dark', label: 'Void', icon: Moon },
-    { value: 'system', label: 'Auto', icon: Monitor },
+  const themeOptions: { value: ThemeMode; label: string; icon: string }[] = [
+    { value: 'light', label: 'Light', icon: 'light_mode' },
+    { value: 'dark', label: 'Dark', icon: 'dark_mode' },
+    { value: 'system', label: 'System', icon: 'monitor' },
   ];
 
   return (
-    <div className="max-w-7xl mx-auto w-full px-6 pb-20 animate-fade-in">
-      
-      {/* Settings Header */}
-      <header className="pt-12 mb-16 space-y-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary font-label-bold text-[10px] uppercase tracking-[0.2em]">
-          <Activity size={14} />
-          System Calibration
-        </div>
-        <h1 className="font-display text-5xl md:text-6xl font-bold text-primary tracking-tight">
-          Command <span className="text-secondary">Config.</span>
-        </h1>
-        <p className="font-body-lg text-secondary text-xl max-w-2xl leading-relaxed">
-          Fine-tune your identity matrix and neural simulation protocols for maximum operational efficiency.
-        </p>
+    <div className="w-full pb-xl animate-fade-in">
+      <header className="mb-xl flex justify-between items-end">
+        <section className="flex flex-col gap-sm md:gap-md mb-lg md:mb-xl">
+          <h1 className="font-display text-display text-primary leading-none tracking-tighter">Settings</h1>
+          <p className="font-body-lg text-body-lg text-secondary">Manage your account and application preferences.</p>
+        </section>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        {/* Left Column: Identity & Artifacts */}
-        <div className="lg:col-span-7 flex flex-col gap-10">
-          
-          {/* Identity Matrix */}
-          <section className="glass rounded-[40px] p-10 shadow-premium relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
-            
-            <div className="flex items-center gap-4 mb-10 pb-6 border-b border-outline-variant/30">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                <User size={20} />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-lg">
+        {/* Left Column: Profile & Resume */}
+        <div className="lg:col-span-7 flex flex-col gap-lg">
+          {/* Profile */}
+          <section className="bg-surface-container-low border border-outline-variant rounded-pebble p-lg md:p-xl lg:p-container-padding">
+            <h3 className="font-headline-md text-headline-md text-primary mb-lg border-b border-outline-variant pb-sm">Your Profile</h3>
+            <div className="flex items-center gap-lg mb-xl">
+              <div className="w-24 h-24 rounded-full overflow-hidden bg-surface border border-outline-variant shrink-0 flex items-center justify-center">
+                <span className="font-headline-md text-headline-md text-primary">{initials}</span>
               </div>
-              <h3 className="font-display text-2xl font-bold text-primary">Identity Matrix</h3>
-            </div>
-
-            <div className="flex items-center gap-8 mb-12">
-              <div className="w-24 h-24 rounded-[32px] bg-primary text-on-primary flex items-center justify-center font-display text-3xl font-bold shadow-xl shadow-primary/20">
-                {initials}
-              </div>
-              <div className="space-y-1">
-                <p className="font-display text-2xl font-bold text-primary italic leading-none">{user?.firstName} {user?.lastName}</p>
-                <p className="font-label-bold text-[11px] text-secondary uppercase tracking-[0.2em]">{user?.email || 'Unauthorized'}</p>
+              <div className="flex flex-col gap-sm">
+                <p className="font-label-bold text-label-bold text-primary">{user?.firstName} {user?.lastName}</p>
+                <p className="font-label-sm text-label-sm text-secondary">{user?.email || 'No email set'}</p>
               </div>
             </div>
-
-            <form className="space-y-8" onSubmit={(e) => {
+            <form className="flex flex-col gap-md" onSubmit={async (e) => {
               e.preventDefault();
-              const form = e.target as HTMLFormElement;
-              const firstName = (form.elements.namedItem('firstName') as HTMLInputElement).value;
-              const lastName = (form.elements.namedItem('lastName') as HTMLInputElement).value;
-              const store = useAuthStore.getState();
-              if (store.user) store.updateUser({ firstName, lastName });
-              setSaveStatus('saved');
-              setTimeout(() => setSaveStatus('idle'), 2000);
+              setIsUpdating(true);
+              try {
+                const { data } = await authAPI.updateProfile({ firstName, lastName });
+                useAuthStore.getState().updateUser({
+                  firstName: data.firstName,
+                  lastName: data.lastName,
+                });
+                setSaveStatus('saved');
+                setTimeout(() => setSaveStatus('idle'), 3000);
+              } catch (error) {
+                console.error("Profile update failed:", error);
+              } finally {
+                setIsUpdating(false);
+              }
             }}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-2">
-                  <label className="font-label-bold text-[10px] text-primary uppercase tracking-widest pl-1" htmlFor="firstName">First Vector</label>
-                  <input className="w-full glass border border-outline-variant/30 rounded-2xl py-4 px-6 font-display font-bold text-lg text-primary focus:border-primary/40 outline-none transition-all shadow-sm" id="firstName" name="firstName" type="text" defaultValue={user?.firstName || ''} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+                <div className="flex flex-col gap-sm">
+                  <label className="font-label-bold text-label-sm text-secondary uppercase tracking-widest">First Name</label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="w-full bg-surface-container-lowest border border-outline-variant rounded-pebble px-md py-sm font-body-md text-body-md text-primary focus:border-primary outline-none"
+                  />
                 </div>
-                <div className="space-y-2">
-                  <label className="font-label-bold text-[10px] text-primary uppercase tracking-widest pl-1" htmlFor="lastName">Last Vector</label>
-                  <input className="w-full glass border border-outline-variant/30 rounded-2xl py-4 px-6 font-display font-bold text-lg text-primary focus:border-primary/40 outline-none transition-all shadow-sm" id="lastName" name="lastName" type="text" defaultValue={user?.lastName || ''} />
+                <div className="flex flex-col gap-sm">
+                  <label className="font-label-bold text-label-sm text-secondary uppercase tracking-widest">Last Name</label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="w-full bg-surface-container-lowest border border-outline-variant rounded-pebble px-md py-sm font-body-md text-body-md text-primary focus:border-primary outline-none"
+                  />
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="font-label-bold text-[10px] text-primary uppercase tracking-widest pl-1" htmlFor="email">Comms Registry (Read-Only)</label>
-                <input className="w-full glass border border-outline-variant/30 rounded-2xl py-4 px-6 font-display font-bold text-lg text-primary opacity-50 cursor-not-allowed outline-none" id="email" type="email" defaultValue={user?.email || ''} disabled />
-              </div>
-              <div className="pt-6 flex justify-end items-center gap-6">
-                {saveStatus === 'saved' && (
-                  <div className="flex items-center gap-2 text-primary font-label-bold text-[10px] uppercase tracking-widest animate-fade-in">
-                    <ShieldCheck size={14} /> Synchronized
-                  </div>
-                )}
-                <button className="bg-primary text-on-primary px-10 py-4 rounded-[20px] font-display font-bold hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all shadow-primary/20" type="submit">Update Matrix</button>
-              </div>
+              <button
+                type="submit"
+                disabled={isUpdating}
+                className="bg-primary text-on-primary border border-primary px-lg py-md rounded-pebble font-label-bold text-label-bold transition-colors"
+              >
+                {isUpdating ? 'Updating...' : 'Save Changes'}
+              </button>
             </form>
+            <div className="mt-md flex justify-end items-center gap-md">
+              {saveStatus === 'saved' && <span className="font-label-sm text-label-sm text-primary animate-fade-in">Saved!</span>}
+            </div>
           </section>
 
-          {/* Artifact Audit (Resume) */}
-          <section className="glass rounded-[40px] p-10 shadow-premium relative">
-            <div className="flex items-center gap-4 mb-10 pb-6 border-b border-outline-variant/30">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                <FileText size={20} />
-              </div>
-              <h3 className="font-display text-2xl font-bold text-primary">Artifact Audit</h3>
-            </div>
-            
-            <p className="font-body-md text-secondary text-lg leading-relaxed mb-10 italic">
-              "Your career artifacts are used to synthesize high-fidelity interview vectors and cultural engineering benchmarks."
-            </p>
+          {/* Resume Management Pebble */}
+          <section className="bg-surface-container-low border border-outline-variant rounded-pebble p-lg md:p-xl lg:p-container-padding">
+            <h3 className="font-headline-md text-headline-md text-primary mb-lg border-b border-outline-variant pb-sm">Your Resume</h3>
+            <p className="font-body-md text-body-md text-secondary mb-md">Your resume is used to tailor interview questions to your experience.</p>
 
             {resume.file ? (
-              <div className="glass border border-primary/20 rounded-[28px] p-8 flex items-center justify-between mb-10 shadow-lg bg-white/40 group">
-                <div className="flex items-center gap-6">
-                  <div className="w-14 h-14 rounded-2xl bg-primary/5 flex items-center justify-center text-primary">
-                    <FileText size={28} />
-                  </div>
+              <div className="bg-surface border border-outline-variant rounded-pebble p-md flex items-center justify-between mb-md">
+                <div className="flex items-center gap-md">
+                  <span className="material-symbols-outlined text-secondary text-headline-lg">description</span>
                   <div>
-                    <p className="font-display font-bold text-lg text-primary">{resume.file.name}</p>
-                    <p className="font-label-bold text-[10px] text-outline uppercase tracking-widest">{(resume.file.size / 1024 / 1024).toFixed(1)} MB Active Artifact</p>
+                    <p className="font-label-bold text-label-bold text-primary">{resume.file.name}</p>
+                    <p className="font-label-sm text-label-sm text-secondary">{(resume.file.size / 1024 / 1024).toFixed(1)} MB</p>
                   </div>
                 </div>
                 <button
+                  aria-label="Delete Resume"
                   onClick={() => { resume.setFile(null); resume.setParsedData(null); }}
-                  className="w-12 h-12 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"
-                  title="Purge Artifact"
+                  className="text-error hover:text-on-error-container transition-colors p-sm rounded-full hover:bg-error-container"
                 >
-                  <Trash2 size={20} />
+                  <span className="material-symbols-outlined">delete</span>
                 </button>
               </div>
             ) : (
-              <div className="px-8 py-4 bg-primary/5 border border-primary/10 rounded-2xl text-[10px] font-label-bold text-primary uppercase tracking-[0.2em] mb-10 text-center">
-                Artifact Reservoir Empty
-              </div>
+              <p className="font-label-sm text-label-sm text-secondary mb-md opacity-60">No resume uploaded yet.</p>
             )}
 
             <div
@@ -197,28 +185,22 @@ export default function SettingsPage() {
                 e.preventDefault();
                 if (e.dataTransfer.files[0]) handleSettingsUpload(e.dataTransfer.files[0]);
               }}
-              className="border-2 border-dashed border-outline-variant/30 hover:border-primary/40 rounded-[32px] p-16 flex flex-col items-center justify-center text-center cursor-pointer transition-all bg-surface-container-lowest/50 hover:bg-white/40 group shadow-inner"
+              className="border-2 border-dashed border-outline-variant rounded-pebble p-lg flex flex-col items-center justify-center text-center gap-sm bg-surface-container-lowest cursor-pointer hover:border-primary transition-colors group"
             >
               {resume.isUploading ? (
-                <div className="space-y-4">
-                  <Loader2 size={32} className="text-primary animate-spin" />
-                  <p className="font-display font-bold text-primary uppercase tracking-widest text-xs">Uplinking Intel...</p>
-                </div>
+                <>
+                  <span className="material-symbols-outlined text-primary animate-spin text-headline-lg">sync</span>
+                  <p className="font-label-bold text-label-bold text-primary">Uploading...</p>
+                </>
               ) : (
-                <div className="space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
-                    <Upload size={32} className="text-secondary" />
-                  </div>
-                  <h4 className="font-display font-bold text-xl text-primary tracking-tight">Deploy New Artifact</h4>
-                  <p className="font-label-bold text-[10px] text-outline uppercase tracking-[0.2em]">PDF, DOCX — SECURE CHANNEL</p>
-                </div>
+                <>
+                  <span className="material-symbols-outlined text-secondary group-hover:text-primary transition-colors text-headline-lg">upload_file</span>
+                  <p className="font-label-bold text-label-bold text-primary group-hover:text-primary transition-colors">Click to upload or drag and drop</p>
+                  <p className="font-label-sm text-label-sm text-secondary">PDF, DOCX up to 5MB</p>
+                </>
               )}
             </div>
-            {uploadError && (
-              <div className="mt-4 flex items-center gap-2 text-red-500 font-label-bold text-[10px] uppercase tracking-widest pl-2 animate-fade-in">
-                <Zap size={14} /> {uploadError}
-              </div>
-            )}
+            {uploadError && <p className="font-label-sm text-label-sm text-error mt-xs">{uploadError}</p>}
             <input
               ref={settingsFileRef}
               type="file"
@@ -229,127 +211,100 @@ export default function SettingsPage() {
           </section>
         </div>
 
-        {/* Right Column: Protocols & Appearance */}
-        <div className="lg:col-span-5 flex flex-col gap-10">
-          
-          {/* Neural Calibration (Preferences) */}
-          <section className="glass rounded-[40px] p-10 shadow-premium relative">
-            <div className="flex items-center gap-4 mb-10 pb-6 border-b border-outline-variant/30">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                <SlidersHorizontal size={20} />
-              </div>
-              <h3 className="font-display text-2xl font-bold text-primary">Neural Calibration</h3>
-            </div>
-
-            <div className="space-y-10">
-              <div className="space-y-4">
-                <label className="font-label-bold text-[10px] text-primary uppercase tracking-widest pl-1">Standard Rigor Index</label>
-                <div className="flex flex-wrap gap-2">
+        {/* Right Column: Preferences */}
+        <div className="lg:col-span-5 flex flex-col gap-lg">
+          {/* Interview Preferences */}
+          <section className="bg-surface-container-low border border-outline-variant rounded-pebble p-lg md:p-xl lg:p-container-padding">
+            <h3 className="font-headline-md text-headline-md text-primary mb-lg border-b border-outline-variant pb-sm">Interview Settings</h3>
+            <div className="flex flex-col gap-lg">
+              <div className="flex flex-col gap-sm">
+                <label className="font-label-bold text-label-bold text-primary">Default Difficulty</label>
+                <div className="flex flex-wrap gap-sm">
                   {(['beginner', 'intermediate', 'advanced'] as const).map((level) => (
                     <button
                       key={level}
                       onClick={() => setDifficulty(level)}
-                      className={`px-6 py-2.5 rounded-full text-[10px] font-label-bold uppercase tracking-widest transition-all border ${
+                      className={
                         difficulty === level
-                          ? 'bg-primary text-on-primary border-primary shadow-lg shadow-primary/20'
-                          : 'glass border-outline-variant/30 text-secondary hover:border-primary/40'
-                      }`}
+                          ? 'bg-primary text-on-primary border border-primary px-md py-xs rounded-full font-label-sm text-label-sm transition-colors'
+                          : 'bg-surface-container-lowest border border-outline-variant px-md py-xs rounded-full font-label-sm text-label-sm text-primary hover:border-primary transition-colors'
+                      }
                     >
-                      {level}
+                      {level.charAt(0).toUpperCase() + level.slice(1)}
                     </button>
                   ))}
                 </div>
               </div>
-
-              <div className="space-y-4">
-                <label className="font-label-bold text-[10px] text-primary uppercase tracking-widest pl-1">Target Sectors</label>
-                <div className="flex flex-wrap gap-2">
+              <div className="flex flex-col gap-sm">
+                <label className="font-label-bold text-label-bold text-primary">Target Roles</label>
+                <div className="flex flex-wrap gap-sm">
                   {targetRoles.map((role) => (
-                    <span key={role} className="glass border border-primary/20 px-4 py-2 rounded-xl font-label-bold text-[10px] text-primary uppercase tracking-widest flex items-center gap-3">
+                    <span key={role} className="bg-surface-container border border-outline-variant px-md py-xs rounded-full font-label-sm text-label-sm text-primary flex items-center gap-xs">
                       {role}
-                      <button onClick={() => removeRole(role)} className="text-outline hover:text-red-500 transition-colors"><X size={14} /></button>
+                      <button onClick={() => removeRole(role)} className="hover:text-error flex items-center justify-center">
+                        <span className="material-symbols-outlined text-[16px]">close</span>
+                      </button>
                     </span>
                   ))}
                   {showAddRole ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-xs">
                       <input
-                        className="glass border border-primary/30 rounded-xl px-4 py-2 font-label-bold text-[10px] text-primary uppercase tracking-widest outline-none w-40"
-                        placeholder="NEW SECTOR..."
+                        className="border border-outline-variant rounded-full px-md py-xs font-label-sm text-label-sm bg-surface-container-lowest text-on-background focus:border-primary outline-none w-40"
+                        placeholder="e.g. Data Engineer"
                         value={newRole}
                         onChange={(e) => setNewRole(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleAddRole()}
                         autoFocus
                       />
-                      <button onClick={handleAddRole} className="text-primary hover:scale-110 transition-transform"><Plus size={18} /></button>
+                      <button onClick={handleAddRole} className="text-primary flex items-center"><span className="material-symbols-outlined text-[16px]">add</span></button>
+                      <button onClick={() => { setShowAddRole(false); setNewRole(''); }} className="text-secondary flex items-center"><span className="material-symbols-outlined text-[16px]">close</span></button>
                     </div>
                   ) : (
                     <button
                       onClick={() => setShowAddRole(true)}
-                      className="border border-dashed border-outline-variant/30 px-4 py-2 rounded-xl font-label-bold text-[10px] text-outline uppercase tracking-widest hover:border-primary/40 hover:text-primary transition-all flex items-center gap-2"
+                      className="border border-dashed border-outline-variant px-md py-xs rounded-full font-label-sm text-label-sm text-secondary hover:text-primary hover:border-primary transition-colors flex items-center gap-xs"
                     >
-                      <Plus size={14} /> Add Sector
+                      <span className="material-symbols-outlined text-[16px]">add</span> Add Role
                     </button>
                   )}
                 </div>
               </div>
-
-              <div className="space-y-8 pt-4 border-t border-outline-variant/20">
-                <div className="flex items-center justify-between group">
-                  <div className="space-y-1">
-                    <p className="font-display font-bold text-lg text-primary tracking-tight">Strict Chrono Protocol</p>
-                    <p className="font-label-bold text-[10px] text-secondary uppercase tracking-widest">Enforce session time limits</p>
-                  </div>
-                  <Toggle checked={strictTiming} onChange={toggleStrictTiming} />
-                </div>
-                <div className="flex items-center justify-between group">
-                  <div className="space-y-1">
-                    <p className="font-display font-bold text-lg text-primary tracking-tight">Neural Audio Uplink</p>
-                    <p className="font-label-bold text-[10px] text-secondary uppercase tracking-widest">Enable AI voice feedback</p>
-                  </div>
-                  <Toggle checked={audioFeedback} onChange={toggleAudioFeedback} />
-                </div>
+              <div className="border-t border-outline-variant mt-sm">
+                <Toggle checked={strictTiming} onChange={toggleStrictTiming} label="Strict Timing" description="Enforce time limits during practice interviews." />
               </div>
+              <Toggle checked={audioFeedback} onChange={toggleAudioFeedback} label="Audio Feedback" description="Voice feedback during practice interviews." />
             </div>
           </section>
 
-          {/* Matrix Appearance (Theme) */}
-          <section className="glass rounded-[40px] p-10 shadow-premium relative">
-            <div className="flex items-center gap-4 mb-10 pb-6 border-b border-outline-variant/30">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                <Monitor size={20} />
-              </div>
-              <h3 className="font-display text-2xl font-bold text-primary">Matrix Appearance</h3>
-            </div>
-
-            <div className="space-y-6">
-              <label className="font-label-bold text-[10px] text-primary uppercase tracking-widest pl-1">Lumen Frequency</label>
-              <div className="flex bg-surface-container-low/50 border border-outline-variant/20 rounded-[28px] p-2 shadow-inner">
-                {themeOptions.map(({ value, label, icon: Icon }) => (
+          {/* Appearance — Theme Switcher */}
+          <section className="bg-surface-container-low border border-outline-variant rounded-pebble p-lg md:p-xl lg:p-container-padding">
+            <h3 className="font-headline-md text-headline-md text-primary mb-lg border-b border-outline-variant pb-sm">Appearance</h3>
+            <div className="flex flex-col gap-md">
+              <p className="font-label-bold text-label-bold text-primary">Theme</p>
+              <p className="font-label-sm text-label-sm text-secondary -mt-sm">Choose your preferred color scheme.</p>
+              <div className="flex bg-surface-container border border-outline-variant rounded-full p-xs">
+                {themeOptions.map(({ value, label, icon }) => (
                   <button
                     key={value}
                     onClick={() => setTheme(value)}
-                    className={`flex-1 py-4 rounded-[20px] font-display font-bold text-xs transition-all flex flex-col items-center justify-center gap-2 ${
+                    className={`flex-1 px-md py-sm rounded-full font-label-sm text-label-sm transition-all flex items-center justify-center gap-xs ${
                       theme === value
-                        ? 'bg-primary text-on-primary shadow-xl shadow-primary/20 scale-[1.02]'
+                        ? 'bg-surface-container-lowest text-primary shadow-sm'
                         : 'text-secondary hover:text-primary'
                     }`}
                   >
-                    <Icon size={18} />
-                    <span className="font-label-bold text-[9px] uppercase tracking-[0.3em]">{label}</span>
+                    <span className="material-symbols-outlined text-[16px]">{icon}</span>
+                    {label}
                   </button>
                 ))}
               </div>
             </div>
           </section>
 
-          {/* Terminal Exit */}
-          <section className="pt-4 flex justify-center">
-            <button 
-              onClick={handleLogout} 
-              className="group flex items-center gap-3 px-8 py-3 rounded-full hover:bg-red-50 text-red-500 font-label-bold text-[10px] uppercase tracking-[0.4em] transition-all"
-            >
-              <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" /> 
-              Terminal Exit
+          {/* Sign Out */}
+          <section className="mt-auto pt-lg">
+            <button onClick={handleLogout} className="text-error font-label-bold text-label-bold hover:underline transition-all flex items-center gap-xs">
+              <span className="material-symbols-outlined text-[18px]">logout</span> Sign Out
             </button>
           </section>
         </div>

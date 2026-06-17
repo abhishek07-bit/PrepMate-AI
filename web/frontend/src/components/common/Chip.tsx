@@ -1,4 +1,3 @@
-import { X } from 'lucide-react';
 
 interface ChipProps {
   label: string;
@@ -41,7 +40,7 @@ export default function Chip({
           }}
           className="hover:text-error"
         >
-          <X size={16} />
+          <span className="material-symbols-outlined text-[16px]">close</span>
         </button>
       )}
     </span>

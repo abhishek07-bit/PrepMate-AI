@@ -26,3 +26,13 @@ backend/uploads/
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project Specific
+# Remove web/ because we are pushing the contents of the web folder itself

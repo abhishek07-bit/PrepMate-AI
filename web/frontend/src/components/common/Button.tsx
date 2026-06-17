@@ -36,7 +36,7 @@ export default function Button({
 }: ButtonProps) {
   return (
     <button
-      className={`rounded-DEFAULT ${variants[variant]} ${sizes[size]} ${
+      className={`rounded-pebble ${variants[variant]} ${sizes[size]} ${
         fullWidth ? 'w-full' : ''
       } flex items-center justify-center gap-sm ${className}`}
       {...props}

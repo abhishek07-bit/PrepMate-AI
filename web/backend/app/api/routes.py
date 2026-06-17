@@ -109,13 +109,18 @@ async def submit_answer(
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
 
-    # Evaluate answer using AI
-    session = db.query(InterviewSession).filter(InterviewSession.id == question.session_id).first()
+    # Verify that the question's session belongs to the current user
+    session = db.query(InterviewSession).filter(
+        InterviewSession.id == question.session_id,
+        InterviewSession.user_id == current_user.id,
+    ).first()
+    if not session:
+        raise HTTPException(status_code=403, detail="Access denied")
     evaluation = await ai_service.evaluate_answer(
         question=question.text,
         answer=req.text,
-        role=session.role if session else "Software Engineer",
-        company=session.company if session else "Tech Company",
+        role=session.role,
+        company=session.company,
     )
 
     answer = Answer(
@@ -202,6 +207,7 @@ async def get_feedback(
     # 5. Update Session Status and Score for Analytics
     session.score = feedback.get("overallScore", 0)
     session.status = "completed"
+    session.duration = sum((a.duration or 0) for a in answers)
     
     db.commit()
 

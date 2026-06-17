@@ -15,7 +15,7 @@ else if (theme === 'system') {
   if (window.matchMedia('(prefers-color-scheme: dark)').matches) root.classList.add('dark');
 }
 
-// Init Supabase auth listener
+// Init Firebase auth listener
 useAuthStore.getState().initAuth();
 
 createRoot(document.getElementById('root')!).render(

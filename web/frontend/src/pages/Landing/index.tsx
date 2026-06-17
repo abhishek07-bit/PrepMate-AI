@@ -1,54 +1,47 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Zap, FileText, Target, Activity, ShieldCheck, Cpu, BarChart3, ChevronRight, Globe, Layers } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 export default function LandingPage() {
   const { user } = useAuthStore();
 
   return (
-    <div className="flex-grow flex flex-col selection:bg-primary/20">
-      <main className="flex-grow flex flex-col">
-        
-        {/* Elite Hero Section */}
-        <section className="relative w-full max-w-7xl mx-auto px-6 py-32 md:py-48 flex flex-col items-center text-center overflow-hidden">
-          {/* Animated Background Accents */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-primary/5 rounded-full blur-[120px] animate-pulse" />
-            <div className="absolute top-40 left-1/4 w-[400px] h-[400px] bg-secondary/5 rounded-full blur-[100px] animate-bounce" style={{ animationDuration: '8s' }} />
+    <div className="bg-background text-on-background antialiased min-h-screen flex flex-col">
+      <main className="flex-grow flex flex-col pt-[var(--spacing-navbar-h)]">
+        {/* Hero Section */}
+        <section className="w-full max-w-max-width mx-auto px-lg md:px-xl lg:px-2xl py-16 md:py-24 lg:py-[120px] flex flex-col items-center justify-center text-center">
+          <div className="inline-flex items-center gap-md mb-xl group cursor-default">
+            <div className="flex items-center gap-sm relative">
+              <div className="absolute -inset-x-6 -inset-y-3 bg-primary/5 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+              <span className="w-2 h-2 bg-primary rounded-full animate-pulse shadow-[0_0_12px_rgba(var(--color-primary-rgb),0.4)]" />
+              <span className="font-label-sm text-label-sm text-primary uppercase tracking-[0.3em] font-bold transition-all duration-300 group-hover:tracking-[0.35em]">Interview Preparation Platform</span>
+              <div className="absolute -bottom-2 left-0 w-12 h-[1px] bg-gradient-to-r from-primary to-transparent opacity-50" />
+            </div>
           </div>
-
-          <div className="inline-flex items-center gap-3 px-4 py-2 glass border-primary/20 rounded-full mb-10 animate-fade-in shadow-premium">
-            <Activity size={14} className="text-primary animate-pulse" />
-            <span className="font-label-bold text-[10px] text-primary uppercase tracking-[0.3em]">Neural Link Protocol Active</span>
-          </div>
-          
-          <h1 className="font-display text-4xl md:text-6xl font-bold text-primary max-w-4xl mb-8 leading-[1.1] tracking-tight animate-slide-up">
-            Master the Interview with <span className="text-secondary italic">Quiet Intelligence.</span>
+          <h1 className="font-display text-[36px] sm:text-[48px] md:text-[64px] lg:text-[80px] text-primary max-w-4xl mb-lg leading-none tracking-tighter">
+            Practice Makes Perfect. Get Ready for Your Next Interview.
           </h1>
-          
-          <p className="font-body-lg text-secondary text-lg md:text-xl max-w-2xl mb-12 leading-relaxed animate-slide-up" style={{ animationDelay: '0.1s' }}>
-            A disciplined, neural-first approach to career mastery. Elevate your narrative through adaptive logic and precise performance engineering.
+          <p className="font-body-lg text-body-lg text-secondary max-w-2xl mb-xl">
+            A simple and effective way to prepare for job interviews. Upload your resume, pick your target company and role, and practice with realistic interview questions tailored to your experience.
           </p>
-          
-          <div className="flex gap-4 flex-wrap justify-center animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <div className="flex gap-md flex-wrap justify-center">
             {user ? (
               <Link
                 to="/dashboard"
-                className="bg-primary text-on-primary font-display text-base font-bold px-10 py-4 rounded-xl shadow-xl shadow-primary/20 hover:scale-[1.02] hover:-translate-y-1 transition-all flex items-center gap-3 group"
+                className="bg-primary text-on-primary font-label-bold text-label-bold px-xl py-md rounded-pebble hover:opacity-90 transition-all duration-300 flex items-center gap-sm"
               >
-                Go to Command Center <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                Go to Dashboard <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
               </Link>
             ) : (
               <>
                 <Link
                   to="/signup"
-                  className="bg-primary text-on-primary font-display text-base font-bold px-10 py-4 rounded-xl shadow-xl shadow-primary/20 hover:scale-[1.02] hover:-translate-y-1 transition-all flex items-center gap-3 group"
+                  className="bg-primary text-on-primary font-label-bold text-label-bold px-xl py-md rounded-pebble hover:opacity-90 transition-all duration-300 flex items-center gap-sm"
                 >
-                  Initiate Prep <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                  Get Started Free <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
                 </Link>
                 <Link
                   to="/login"
-                  className="glass text-primary border border-primary/20 font-display text-base font-bold px-10 py-4 rounded-xl hover:bg-white/40 transition-all"
+                  className="bg-surface-container-lowest text-primary border border-outline-variant font-label-bold text-label-bold px-xl py-md rounded-pebble hover:bg-surface-container-low transition-all duration-300"
                 >
                   Sign In
                 </Link>
@@ -57,59 +50,45 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Protocol Matrix (How It Works) */}
-        <section className="w-full max-w-7xl mx-auto px-6 py-24">
-          <div className="flex flex-col md:flex-row justify-between items-end gap-10 mb-16 border-b border-outline-variant/30 pb-8">
-            <div className="space-y-3">
-              <h2 className="font-display text-3xl md:text-4xl font-bold text-primary tracking-tight">System Protocols.</h2>
-              <p className="font-body-lg text-secondary text-lg max-w-xl">The three-stage neural architecture for interview dominance.</p>
-            </div>
-            <div className="text-[10px] font-bold text-outline uppercase tracking-[0.3em]">Operational Readiness 100%</div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* How It Works */}
+        <section className="w-full max-w-max-width mx-auto px-lg md:px-xl lg:px-2xl py-12 md:py-16 lg:py-[80px]">
+          <h2 className="font-headline-lg text-[28px] md:text-[36px] lg:text-[40px] text-primary text-center mb-xl tracking-tighter">How It Works</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-lg">
             {[
-              { icon: FileText, step: 'Protocol 01', title: 'Data Extraction', desc: 'Upload your experience matrix. Our neural engine audits your skills and career trajectory to map relevant challenge vectors.', color: 'primary' },
-              { icon: Target, step: 'Protocol 02', title: 'Tactical Simulation', desc: 'Engage in company-specific chambers. Our adaptive AI simulates high-rigor interviews with real-time logic shifting.', color: 'secondary' },
-              { icon: BarChart3, step: 'Protocol 03', title: 'Performance Intel', desc: 'Receive high-fidelity performance metrics, linguistic auditing, and actionable strategic insights after each mission.', color: 'primary' },
-            ].map((card, i) => {
-              const Icon = card.icon;
+              { icon: 'upload_file', step: '01', title: 'Upload Your Resume', desc: 'Upload your resume and our system will analyze your skills, work experience, and strengths to create personalized interview questions just for you.' },
+              { icon: 'track_changes', step: '02', title: 'Practice Interviews', desc: 'Select the job role and company you are applying for. You will get realistic interview questions that match what you will face in real interviews.' },
+              { icon: 'electric_bolt', step: '03', title: 'Get Detailed Feedback', desc: 'After each practice session, you will receive a score, analysis of your strengths and weaknesses, and specific suggestions on how to improve your answers.' },
+            ].map((card) => {
               return (
-                <div key={card.title} className="glass rounded-[32px] p-8 flex flex-col group hover:bg-white/40 transition-all duration-500 shadow-premium">
-                  <div className={`w-14 h-14 rounded-xl bg-${card.color}/10 border border-${card.color}/20 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform`}>
-                    <Icon size={24} className={`text-${card.color}`} />
+                <div key={card.title} className="bg-surface-container-low border border-outline-variant rounded-pebble p-lg md:p-xl lg:p-container-padding flex flex-col group hover:border-primary transition-all duration-300">
+                  <div className="w-12 h-12 rounded-pebble bg-surface-container-lowest border border-outline-variant text-primary flex items-center justify-center mb-lg">
+                    <span className="material-symbols-outlined text-[24px]">{card.icon}</span>
                   </div>
-                  <span className="font-label-bold text-[9px] text-outline uppercase tracking-[0.3em] mb-2">{card.step}</span>
-                  <h3 className="font-display text-xl font-bold text-primary mb-4 tracking-tight">{card.title}</h3>
-                  <p className="font-body-md text-secondary leading-relaxed text-base italic opacity-80 group-hover:opacity-100 transition-opacity">"{card.desc}"</p>
+                  <span className="font-label-sm text-label-sm text-secondary uppercase tracking-widest mb-sm">Step {card.step}</span>
+                  <h3 className="font-headline-md text-headline-md text-primary mb-md">{card.title}</h3>
+                  <p className="font-body-md text-body-md text-secondary flex-grow">{card.desc}</p>
                 </div>
               );
             })}
           </div>
         </section>
 
-        {/* Feature Intelligence Matrix */}
-        <section className="w-full bg-surface-container-low/30 border-y border-outline-variant/20 py-32">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="text-center mb-24 space-y-6">
-              <h2 className="font-display text-4xl md:text-5xl font-bold text-primary tracking-tight italic">Built for <span className="text-secondary">Elite Result.</span></h2>
-              <div className="w-24 h-1 bg-primary/20 mx-auto rounded-full" />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto">
+        {/* Features */}
+        <section className="w-full bg-surface-container-low py-16 md:py-24 lg:py-[120px] border-y border-outline-variant">
+          <div className="max-w-max-width mx-auto px-lg md:px-xl lg:px-2xl">
+            <h2 className="font-headline-lg text-[28px] md:text-[36px] lg:text-[40px] text-primary text-center mb-xl tracking-tighter">Features</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-xl max-w-4xl mx-auto">
               {[
-                { icon: Layers, title: 'Multi-AI Neural Stack', desc: 'Gemini, Groq, and Cerebras orchestrated in a fail-safe cluster for zero-latency intelligence retrieval.' },
-                { icon: Globe, title: 'Resume-Aware Vectors', desc: 'Deep-mapping of your career artifacts to craft contextually precise challenges unique to your trajectory.' },
-                { icon: Activity, title: 'Real-Time Neural Scoring', desc: 'Instant linguistic and technical evaluation across 12 distinct performance metrics with sub-second feedback.' },
-                { icon: Cpu, title: 'Adaptive Rigor Logic', desc: 'Dynamic difficulty scaling from Baseline to Bar-Raiser intensity, tailored to your evolving performance data.' },
+                { title: 'Personalized Questions Based on Your Resume', desc: 'The system reads your resume and creates interview questions that are specific to your experience, skills, and the type of jobs you are applying for.' },
+                { title: 'Real-Time Feedback and Scoring', desc: 'Each of your answers is evaluated on clarity, depth, structure, and relevance. You get specific feedback on what you did well and how to improve.' },
+                { title: 'Practice for Any Company and Role', desc: 'Whether you are applying to a big tech company or a startup, you can practice with questions tailored to that company and the specific role you want.' },
+                { title: 'Track Your Progress Over Time', desc: 'Keep track of all your practice sessions, see your scores improve, and identify areas where you need more work. Your progress history helps you prepare more effectively.' },
               ].map((feature) => (
-                <div key={feature.title} className="glass rounded-[32px] p-8 flex gap-8 items-start group hover:shadow-premium transition-all duration-300">
-                  <div className="w-14 h-14 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:rotate-6 transition-transform">
-                    <feature.icon size={24} />
-                  </div>
-                  <div className="space-y-3">
-                    <h3 className="font-display text-xl font-bold text-primary tracking-tight">{feature.title}</h3>
-                    <p className="font-body-md text-secondary leading-relaxed">{feature.desc}</p>
+                <div key={feature.title} className="flex gap-md items-start">
+                  <div className="w-2 h-2 bg-primary rounded-full mt-2 shrink-0" />
+                  <div className="flex flex-col gap-xs">
+                    <h3 className="font-label-bold text-sm text-primary mb-xs">{feature.title}</h3>
+                    <p className="font-body-md text-body-md text-secondary">{feature.desc}</p>
                   </div>
                 </div>
               ))}
@@ -117,28 +96,19 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Strategic Close Section */}
-        <section className="relative w-full py-40 px-6 text-center overflow-hidden">
-          <div className="absolute inset-0 bg-primary -z-10" />
-          <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay -z-10" />
-          
-          <div className="max-w-4xl mx-auto space-y-12 animate-fade-in">
-            <h2 className="font-display text-5xl md:text-7xl font-bold text-on-primary tracking-tight">Begin Preparation Protocol.</h2>
-            <p className="font-body-lg text-surface-dim text-xl md:text-2xl max-w-2xl mx-auto leading-relaxed opacity-80">
-              Step into the quiet logic of structured career dominance. Initialize your neural simulation now.
+        {/* Bottom CTA */}
+        <section className="w-full bg-primary text-on-primary py-16 md:py-24 lg:py-[120px] px-lg md:px-xl lg:px-2xl text-center">
+          <div className="max-w-3xl mx-auto flex flex-col items-center">
+            <h2 className="font-display text-[32px] sm:text-[40px] md:text-[56px] mb-lg tracking-tighter leading-none">Start Practicing Today</h2>
+            <p className="font-body-lg text-body-lg text-outline-variant mb-xl max-w-xl">
+              Practice interviews are the best way to prepare. Start now and feel more confident for your next job interview.
             </p>
-            <div className="flex justify-center pt-8">
-              <Link
-                to="/signup"
-                className="bg-surface-container-lowest text-primary font-display text-xl font-bold px-16 py-6 rounded-[30px] hover:scale-105 transition-all shadow-2xl flex items-center gap-4"
-              >
-                Get Started Free <ArrowRight size={24} />
-              </Link>
-            </div>
-            <div className="flex items-center justify-center gap-4 text-on-primary/40 font-label-bold text-[10px] uppercase tracking-[0.4em] pt-12">
-              <ShieldCheck size={16} />
-              Secured Neural Gateway
-            </div>
+            <Link
+              to="/signup"
+              className="bg-surface-container-lowest text-primary font-label-bold text-label-bold px-xl py-lg rounded-pebble hover:bg-surface-container-low transition-colors duration-300 flex items-center gap-sm"
+            >
+              Get Started Free <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+            </Link>
           </div>
         </section>
       </main>

@@ -8,7 +8,9 @@ export default function AppLayout() {
     return <Navigate to="/login" replace />;
   }
 
-    <main className="flex-1 px-lg md:px-container-padding py-lg max-w-max-width mx-auto w-full animate-fade-in">
+  return (
+    <main className="flex-1 w-full max-w-max-width mx-auto px-lg md:px-xl lg:px-2xl pt-[calc(var(--spacing-navbar-h)+24px)] pb-2xl animate-fade-in">
       <Outlet />
     </main>
+  );
 }

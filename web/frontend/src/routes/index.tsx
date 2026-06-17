@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
+import { createBrowserRouter, Outlet } from 'react-router-dom';
 import AppLayout from '../layouts/AppLayout';
 import AuthLayout from '../layouts/AuthLayout';
 import InterviewLayout from '../layouts/InterviewLayout';
@@ -18,51 +18,81 @@ import AnalyticsPage from '../pages/Analytics';
 import SettingsPage from '../pages/Settings';
 import CompanyPrepPage from '../pages/CompanyPrep';
 import StaticPage from '../pages/Static';
+import ForgotPasswordPage from '../pages/Auth/ForgotPassword';
+import NotFoundPage from '../pages/NotFound';
 
-const TERMS_CONTENT = `Welcome to PrepMate AI! We are thrilled to have you on board. These Terms and Conditions outline the rules and regulations for the use of our website and services.
+const TERMS_CONTENT = `Welcome to PrepMate AI! These Terms and Conditions outline the rules, regulations, and guidelines for using our website and services. By accessing or using our platform, you agree to be bound by these Terms.
 
 1. Acceptance of Terms
-By accessing or using PrepMate AI, you agree to be bound by these terms. If you disagree with any part of the terms, you may not access the service. These rules ensure a safe and reliable environment for all our users.
+By creating an account, accessing the platform, or utilizing any of our features, you expressly agree to comply with these terms. If you do not agree with any part of these terms, you must immediately discontinue the use of our services. These terms form a legally binding agreement between you and PrepMate AI.
 
 2. Description of Service
-PrepMate AI provides artificial intelligence-powered interview preparation tools, including resume analysis and mock interview sessions. Our goal is to help you practice and improve. Please note that while our tools are highly advanced, we do not guarantee employment, job offers, or specific interview outcomes.
+PrepMate AI is an advanced, AI-driven interview preparation platform designed to simulate real-world technical and behavioral interviews. We offer features such as resume analysis, skill extraction, customized mock interview sessions, real-time voice interaction, and comprehensive feedback reports. Our services are intended solely for educational and preparatory purposes. We do not guarantee employment, job offers, or specific performance outcomes in actual interviews.
 
-3. Your Account and Responsibilities
-To use certain features, you must register for an account. You are responsible for maintaining the confidentiality of your account password and for all activities that occur under your account. Please provide accurate and complete information during registration.
+3. User Accounts and Responsibilities
+To unlock the full potential of our platform, you are required to register for an account. You agree to:
+- Provide accurate, current, and complete information during registration.
+- Maintain the security of your password and account credentials.
+- Take full responsibility for all activities that occur under your account.
+- Notify us immediately of any unauthorized use or suspected security breach.
 
-4. Acceptable Use
-You agree to use our platform only for lawful purposes. You must not use our service to transmit any harmful, offensive, or illegal content. Attempting to hack, disrupt, or overload our AI systems is strictly prohibited and will result in immediate account termination.
+4. Acceptable Use and Platform Integrity
+We strive to maintain a safe and productive environment. You agree not to:
+- Use the platform for any unlawful, misleading, or fraudulent purpose.
+- Upload viruses, malicious code, or attempt to disable, overburden, or impair the proper working of the platform.
+- Scrape, data-mine, or automatically collect information from our services without explicit permission.
+- Attempt to reverse engineer, decompile, or bypass the AI orchestration and fallback stack.
+Any violation may result in immediate suspension or termination of your account without notice.
 
-5. Intellectual Property
-All content, design, and software on this platform are the exclusive property of PrepMate AI. You may not copy, reproduce, or distribute our proprietary materials without explicit written permission. Your personal data and uploaded resumes, however, remain yours.
+5. Intellectual Property Rights
+All proprietary content, software architecture, UI/UX designs (including our unique "pebble" design system), logos, and documentation belong exclusively to PrepMate AI. Your personal data, uploaded resumes, and interview responses remain your intellectual property. By uploading your resume, you grant us a temporary, limited license to process the document solely to provide our AI analysis services.
 
-6. Changes to the Service
-We are constantly improving PrepMate AI. We reserve the right to modify, suspend, or discontinue any part of the service at any time, with or without notice.
+6. Modifications to the Service and Terms
+We are constantly improving PrepMate AI. We reserve the right to modify, suspend, or discontinue any feature or part of the service at any time. We may also update these Terms periodically. Continued use of the platform following any modifications constitutes acceptance of the new Terms.
 
 7. Limitation of Liability
-PrepMate AI is provided "as is" without any warranties. We shall not be held liable for any direct, indirect, or consequential damages resulting from your use of the platform.
+The services are provided on an "as is" and "as available" basis. PrepMate AI, its developers, and partners shall not be held liable for any direct, indirect, incidental, or consequential damages resulting from your use or inability to use the platform, including but not limited to lost job opportunities or data loss.
 
-If you have any questions about these terms, please reach out to us via our Contact page.`;
+If you have any questions or concerns regarding these Terms, please reach out to us via the Contact page.`;
 
-const PRIVACY_CONTENT = `Your privacy is incredibly important to us at PrepMate AI. This Privacy Policy explains how we collect, use, and protect your personal information in a clear and transparent way.
+const PRIVACY_CONTENT = `Your privacy is of the utmost importance to us at PrepMate AI. This comprehensive Privacy Policy explains how we collect, use, protect, and handle your personal data when you use our platform. We are committed to transparency and strict data minimization.
 
 1. Information We Collect
-When you use PrepMate AI, we collect information that you willingly provide to us. This includes your name, email address, and the resumes or documents you upload. We also record your text and selected preferences during mock interview sessions to provide you with feedback.
+We collect information that you willingly provide and data generated through your interaction with our services:
+- Personal Identifiers: Name, email address, and authentication tokens (via Firebase or our JWT system).
+- Career Documents: Resumes and CVs uploaded for parsing and skill extraction.
+- Interview Data: Spoken audio transcripts (via Web Speech API), text answers, selected preferences (role, difficulty, company), and the resulting AI-generated feedback.
+- Usage Data: Information on how you navigate the platform, session durations, and interaction with specific UI components to help us improve the system.
 
 2. How We Use Your Information
-Your data is primarily used to operate and improve your experience. Specifically, we use your resume and interview responses to generate personalized AI feedback and calculate your readiness scores. We may also use your email to send you important account updates or product announcements.
+Your data is utilized strictly to provide, personalize, and improve your experience:
+- To operate the core AI interview engine and generate actionable, highly personalized feedback reports.
+- To track your progress over time via our Analytics Dashboard.
+- To communicate with you regarding platform updates, security alerts, and account maintenance.
+- To debug issues and optimize our system design and fallback orchestration mechanisms.
 
-3. AI Processing and Data Security
-To provide our intelligent services, your inputs (such as resume text and interview answers) are processed by secure, enterprise-grade AI models. We strip away personal identifiers wherever possible before sending data to our AI partners. We do not sell your personal data to third-party marketers or advertisers.
+3. AI Processing, Data Security, and Third Parties
+To provide our intelligent services, your inputs (such as resume text and transcribed interview answers) are processed by our secure, enterprise-grade AI fallback stack (including Gemini, Groq, OpenRouter, and Cerebras). 
+- We employ robust data sanitization: We strip away obvious personal identifiers from your text before sending it to our AI partners.
+- We never sell your personal data. Your data is never shared with third-party marketers, advertisers, or external recruiters.
+- Data is encrypted in transit and at rest within our PostgreSQL database.
 
-4. Cookies and Tracking
-We use cookies (small data files saved to your browser) to keep you logged in and to understand how you interact with our website. This helps us fix bugs and improve the overall user experience. You can choose to disable cookies in your browser settings, though some features of the site may not function properly.
+4. Cookies and Tracking Technologies
+We use cookies and similar local storage mechanisms (like Zustand persistence) to:
+- Maintain secure, continuous sessions as you navigate between the dashboard and active interviews.
+- Remember your theme preferences (light/dark mode) and accessibility settings.
+- Analyze platform performance. You can disable non-essential cookies via your browser settings, though doing so may degrade some interactive features.
 
-5. Your Rights
-You have complete control over your data. You can access, update, or delete your account and all associated data at any time through your Account Settings. If you need assistance with data deletion, you can contact our support team.
+5. Your Data Rights
+You retain complete control over your digital footprint on PrepMate AI:
+- Access and Update: You can view and modify your profile details at any time in the Settings.
+- Data Portability: You can export your feedback reports and interview history.
+- Right to Erasure: You can permanently delete your account and all associated data (including resumes and interview history) directly from the dashboard or by contacting support.
 
-6. Changes to This Policy
-We may update this Privacy Policy from time to time to reflect changes in our practices or legal requirements. We will notify you of any significant changes by posting the new policy on this page.`;
+6. Changes to This Privacy Policy
+We may update this policy as our platform evolves or legal requirements change. Significant updates will be communicated via email or a prominent notice on the platform.
+
+For any privacy-related inquiries, please contact our Data Protection Officer at privacy@prepmateai.com.`;
 
 const COOKIE_CONTENT = `Cookie Policy for PrepMate AI
 
@@ -182,12 +212,17 @@ We leverage state-of-the-art Large Language Models (LLMs) to dynamically generat
 
 Whether you are preparing for a grueling FAANG system design round or a standard behavioral screening, PrepMate AI is your ultimate sparring partner.`;
 
+import ScrollToTop from '../components/common/ScrollToTop';
+import CookieBanner from '../components/common/CookieBanner';
+
 // Root Wrapper to provide global systems
 function RootWrapper() {
   return (
     <>
+      <ScrollToTop />
       <Outlet />
       <ToastContainer />
+      <CookieBanner />
     </>
   );
 }
@@ -195,12 +230,12 @@ function RootWrapper() {
 // Global Layout for all pages
 function GlobalLayout() {
   return (
-    <div className="bg-background text-on-background antialiased min-h-screen flex flex-col selection:bg-primary/20">
+    <div className="bg-background text-on-background antialiased min-h-screen flex flex-col selection:bg-primary-container selection:text-on-primary-container">
       <Navbar />
-      <main className="flex-grow flex flex-col">
+      <div className="flex-1 flex flex-col min-h-screen">
         <Outlet />
-      </main>
-      <Footer />
+        <Footer />
+      </div>
     </div>
   );
 }
@@ -229,6 +264,7 @@ export const router = createBrowserRouter([
             children: [
               { path: 'login', element: <LoginPage /> },
               { path: 'signup', element: <SignupPage /> },
+              { path: 'forgot', element: <ForgotPasswordPage /> },
             ],
           },
           {
@@ -253,7 +289,7 @@ export const router = createBrowserRouter([
       },
       {
         path: '*',
-        element: <Navigate to="/" replace />,
+        element: <NotFoundPage />,
       },
     ],
   },

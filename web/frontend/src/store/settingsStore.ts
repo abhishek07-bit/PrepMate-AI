@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { safeStorage } from '../utils/safeStorage';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -51,6 +52,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'prepmate-settings',
+      storage: safeStorage,
       onRehydrateStorage: () => (state) => {
         if (state) applyTheme(state.theme);
       },

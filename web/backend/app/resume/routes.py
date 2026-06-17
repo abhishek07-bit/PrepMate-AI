@@ -2,6 +2,7 @@ import os
 import io
 from pypdf import PdfReader
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -44,8 +45,6 @@ async def upload_resume(
     extracted_skills = []
     parsed_text_str = ""
     
-    import asyncio
-    
     def extract_pdf_text(b_content):
         text = ""
         reader = PdfReader(io.BytesIO(b_content))
@@ -58,17 +57,17 @@ async def upload_resume(
         doc = Document(io.BytesIO(b_content))
         return " ".join([p.text for p in doc.paragraphs])
 
-    # Real PDF parsing
+    # Real PDF parsing — using run_in_threadpool instead of deprecated get_event_loop
     if file.filename.lower().endswith(".pdf"):
         try:
-            parsed_text_str = await asyncio.get_event_loop().run_in_executor(None, extract_pdf_text, content)
+            parsed_text_str = await run_in_threadpool(extract_pdf_text, content)
         except Exception as e:
             raise HTTPException(status_code=422, detail="Failed to parse PDF document.")
             
     # Real DOCX parsing
     elif file.filename.lower().endswith(".docx"):
         try:
-            parsed_text_str = await asyncio.get_event_loop().run_in_executor(None, extract_docx_text, content)
+            parsed_text_str = await run_in_threadpool(extract_docx_text, content)
         except Exception as e:
             raise HTTPException(status_code=422, detail="Failed to parse DOCX document.")
 

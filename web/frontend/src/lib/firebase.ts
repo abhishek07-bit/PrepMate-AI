@@ -1,5 +1,5 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
+import { initializeApp, type FirebaseApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: (import.meta as any).env.VITE_FIREBASE_API_KEY,
@@ -10,8 +10,21 @@ const firebaseConfig = {
   appId: (import.meta as any).env.VITE_FIREBASE_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
-
 export const isFirebaseConfigured = () => Boolean(firebaseConfig.apiKey);
+
+let app: FirebaseApp | null = null;
+let _auth: Auth | null = null;
+let _googleProvider: GoogleAuthProvider | null = null;
+
+if (isFirebaseConfigured()) {
+  try {
+    app = initializeApp(firebaseConfig);
+    _auth = getAuth(app);
+    _googleProvider = new GoogleAuthProvider();
+  } catch (e) {
+    console.error('[PrepMate] Firebase initialization failed:', e);
+  }
+}
+
+export const auth = _auth as Auth;
+export const googleProvider = _googleProvider as GoogleAuthProvider;

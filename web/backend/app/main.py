@@ -13,7 +13,15 @@ app = FastAPI(
 
 # CORS Middleware
 # Restrict to explicitly allowed origins from environment
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173").split(",")
+# Strip whitespace to prevent misconfiguration from env vars
+allowed_origins = [
+    origin.strip()
+    for origin in os.getenv(
+        "ALLOWED_ORIGINS",
+        "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
+    ).split(",")
+    if origin.strip()
+]
 
 app.add_middleware(
     CORSMiddleware,
@@ -79,22 +87,30 @@ async def startup():
     # Init Database
     init_db()
 
-    # Init Firebase
-    service_account_path = "firebase-service-account.json"
-    service_account_env = os.getenv("FIREBASE_SERVICE_ACCOUNT")
-
-    if os.path.exists(service_account_path):
-        cred = credentials.Certificate(service_account_path)
-        firebase_admin.initialize_app(cred)
-        print("[PrepMate] Firebase Admin initialized from file.")
-    elif service_account_env:
-        import json
-        try:
-            service_account_info = json.loads(service_account_env)
-            cred = credentials.Certificate(service_account_info)
-            firebase_admin.initialize_app(cred)
-            print("[PrepMate] Firebase Admin initialized from environment variable.")
-        except Exception as e:
-            print(f"[PrepMate] Failed to initialize Firebase from environment variable: {e}")
+    # Init Firebase — guard against double-initialization on app restarts
+    if firebase_admin._apps:
+        print("[PrepMate] Firebase Admin already initialized, skipping.")
     else:
-        print("[PrepMate] Firebase Service Account not found. Firebase auth disabled.")
+        service_account_path = "firebase-service-account.json"
+        service_account_env = os.getenv("FIREBASE_SERVICE_ACCOUNT")
+
+        if os.path.exists(service_account_path):
+            try:
+                cred = credentials.Certificate(service_account_path)
+                firebase_admin.initialize_app(cred)
+                print("[PrepMate] Firebase Admin initialized from file.")
+            except ValueError:
+                print("[PrepMate] Firebase Admin already initialized.")
+        elif service_account_env:
+            import json
+            try:
+                service_account_info = json.loads(service_account_env)
+                cred = credentials.Certificate(service_account_info)
+                firebase_admin.initialize_app(cred)
+                print("[PrepMate] Firebase Admin initialized from environment variable.")
+            except ValueError:
+                print("[PrepMate] Firebase Admin already initialized.")
+            except Exception as e:
+                print(f"[PrepMate] Failed to initialize Firebase from environment variable: {e}")
+        else:
+            print("[PrepMate] Firebase Service Account not found. Firebase auth disabled.")

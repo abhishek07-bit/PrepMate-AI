@@ -1,4 +1,3 @@
-import { Zap } from 'lucide-react';
 
 interface NeuralLoaderProps {
   message?: string;
@@ -13,7 +12,7 @@ export default function NeuralLoader({ message = 'Calibrating Neural Matrix...' 
         <div className="absolute inset-0 rounded-full border-2 border-primary/10 animate-[ping_3s_linear_infinite_1s]" />
         
         <div className="relative w-24 h-24 rounded-full bg-primary/5 border border-primary/20 flex items-center justify-center text-primary shadow-premium">
-          <Zap size={40} className="animate-pulse" />
+          <span className="material-symbols-outlined text-[40px] animate-pulse">bolt</span>
         </div>
         
         {/* Orbiting Particles */}

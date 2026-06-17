@@ -1,14 +1,28 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Timer, Brain, ArrowRight, Loader2, Volume2, VolumeX, MessageSquare, Mic, ShieldCheck, MicOff, Zap, ShieldAlert, Activity } from 'lucide-react';
+import { motion, Variants } from 'framer-motion';
 import ProgressBar from '../../components/common/ProgressBar';
 import { useInterviewStore } from '../../store/interviewStore';
 import { interviewAPI } from '../../api/client';
 import { useVoice } from '../../hooks/useVoice';
 import { useSpeechToText } from '../../hooks/useSpeechToText';
 import NeuralLoader from '../../components/common/NeuralLoader';
+import { safeId } from '../../utils/safeId';
 
 type Phase = 'question' | 'evaluating' | 'feedback';
+
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.2 }
+  }
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 15 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
 
 export default function MockInterviewPage() {
   const navigate = useNavigate();
@@ -53,19 +67,28 @@ export default function MockInterviewPage() {
     }
   }, [sessionId, questions, navigate]);
 
+  const lastSpokenRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (currentQuestion && phase === 'question') {
       setQuestionVisible(false);
-      setTimeout(() => setQuestionVisible(true), 50);
-      
-      if (isEnabled) {
+      const timeoutId = setTimeout(() => setQuestionVisible(true), 50);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [currentQuestionIndex, currentQuestion, phase]);
+
+  useEffect(() => {
+    if (currentQuestion && phase === 'question' && isEnabled) {
+      const key = `${currentQuestionIndex}-${currentQuestion.id}`;
+      if (lastSpokenRef.current !== key) {
+        lastSpokenRef.current = key;
         const fullText = currentQuestion.subPrompt 
           ? `${currentQuestion.text}. ${currentQuestion.subPrompt}`
           : currentQuestion.text;
         speak(fullText);
       }
     }
-  }, [currentQuestionIndex, currentQuestion, phase]);
+  }, [currentQuestionIndex, currentQuestion, phase, isEnabled, speak]);
 
   const timerRef = useRef<any>(null);
 
@@ -119,7 +142,7 @@ export default function MockInterviewPage() {
       });
 
       addAnswer({
-        id: crypto.randomUUID(),
+        id: safeId(),
         questionId: currentQuestion.id,
         text: answerText,
         confidence,
@@ -154,145 +177,136 @@ export default function MockInterviewPage() {
   if (!currentQuestion) return null;
 
   return (
-    <div className="flex-1 flex flex-col max-w-6xl mx-auto w-full px-6 relative min-h-screen animate-fade-in py-4">
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      className="flex-1 flex flex-col max-w-max-width mx-auto w-full px-lg md:px-xl pt-[96px] pb-lg min-h-screen min-h-[100dvh] overflow-hidden"
+    >
       
-      {/* Simulation HUD */}
-      <header className="w-full pt-4 flex flex-col gap-3 relative z-30">
-        <div className="flex justify-between items-end">
-          <div className="space-y-2">
-            <div className="flex items-center gap-4">
-              <div className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary font-label-bold text-[10px] uppercase tracking-[0.2em]">
-                {currentQuestion.category || 'Core Assessment'}
-              </div>
-              <div className="flex items-center gap-2 text-secondary font-label-bold text-[10px] uppercase tracking-widest">
-                <Timer size={14} className="text-primary" />
-                {formatTime(timer)}
-              </div>
-            </div>
-            <h2 className="font-display text-sm font-bold text-primary">Challenge {currentQuestionIndex + 1} of {questions.length}</h2>
+      {/* HUD */}
+      <motion.header variants={itemVariants} className="flex flex-col gap-xs">
+        <div className="flex items-center justify-between flex-wrap gap-sm">
+          <div className="flex items-center gap-sm relative">
+            <span className="w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--color-primary-rgb),0.4)]" />
+            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">
+              {currentQuestion.category || 'Question'}
+            </span>
+            <div className="absolute -bottom-1 left-0 w-8 h-[1px] bg-gradient-to-r from-primary to-transparent opacity-40" />
           </div>
-          
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-md">
             <button
               onClick={toggle}
-              className={`group flex items-center gap-3 px-4 py-2 rounded-2xl border transition-all duration-500 ${
-                isEnabled ? 'glass border-primary/30 text-primary shadow-lg shadow-primary/10' : 'bg-surface-container-low border-outline-variant text-outline'
+              className={`flex items-center gap-sm px-md py-sm rounded-pebble border transition-all ${
+                isEnabled ? 'bg-primary text-on-primary border-primary' : 'bg-surface text-secondary border-outline-variant'
               }`}
             >
-              {isEnabled ? <Volume2 size={16} className="group-hover:scale-110 transition-transform" /> : <VolumeX size={16} />}
-              <span className="font-label-bold text-[10px] uppercase tracking-widest">{isEnabled ? 'Neural Voice Live' : 'Voice Offline'}</span>
+              <span className="material-symbols-outlined text-[16px]">{isEnabled ? 'volume_up' : 'volume_off'}</span>
+              <span className="font-label-bold text-[10px] uppercase tracking-widest">{isEnabled ? 'Voice On' : 'Voice Off'}</span>
             </button>
           </div>
         </div>
-        <ProgressBar value={((currentQuestionIndex + 1) / questions.length) * 100} height="3px" />
-      </header>
+        <ProgressBar value={((currentQuestionIndex + 1) / questions.length) * 100} height="2px" />
+      </motion.header>
 
-      {/* Main Simulation Stage */}
-      <div className="flex-1 flex flex-col relative overflow-hidden mt-4">
+      {/* Main Content Area */}
+      <motion.main variants={itemVariants} className="flex-1 flex flex-col relative bg-surface-container-low border border-outline-variant rounded-pebble overflow-hidden">
         
-        {/* PHASE: EVALUATING */}
+        {/* EVALUATING OVERLAY */}
         {phase === 'evaluating' && (
-          <div className="absolute inset-0 flex flex-col justify-center items-center z-50 glass backdrop-blur-md rounded-[48px] animate-fade-in">
-            <NeuralLoader message="Synthesizing Response Vectors..." />
-          </div>
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="absolute inset-0 z-50 bg-surface/80 backdrop-blur-sm flex items-center justify-center"
+          >
+            <NeuralLoader message="Analyzing performance..." />
+          </motion.div>
         )}
 
-        {/* PHASE: FEEDBACK */}
+        {/* FEEDBACK OVERLAY */}
         {phase === 'feedback' && currentFeedback && (
-          <div className="absolute inset-0 flex flex-col justify-center items-center z-40 px-6 animate-scale-in">
-            <div className="glass rounded-[32px] p-8 w-full max-w-2xl shadow-premium relative overflow-hidden text-center">
-              <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl animate-pulse" />
-              
-              {/* Score HUD */}
-              <div className="flex justify-center mb-6">
-                <div className="relative w-28 h-28 flex items-center justify-center">
-                  <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                    <circle className="text-outline-variant/30" cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="2.5" />
-                    <circle 
-                      className="text-primary transition-all duration-1000 ease-out" 
-                      cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="2.5"
-                      strokeDasharray={`${currentFeedback.score}, 100`}
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <div className="absolute flex flex-col items-center">
-                    <span className="font-display text-5xl font-bold text-primary tracking-tighter">{currentFeedback.score}</span>
-                    <span className="text-[9px] font-label-bold text-secondary uppercase tracking-[0.2em] mt-1">Rating</span>
-                  </div>
+          <motion.div 
+            initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+            className="absolute inset-0 z-40 bg-surface flex flex-col items-center justify-center px-lg py-xl text-center gap-xl"
+          >
+            <div className="flex flex-col items-center gap-md">
+              <div className="relative w-24 h-24 flex items-center justify-center">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                  <circle className="text-outline-variant" cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="2" />
+                  <circle 
+                    className="text-primary transition-all duration-1000 ease-out" 
+                    cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="2"
+                    strokeDasharray={`${currentFeedback.score}, 100`}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="absolute flex flex-col items-center">
+                  <span className="font-display text-[32px] font-bold text-primary leading-none">{currentFeedback.score}</span>
+                  <span className="text-[8px] font-bold text-secondary uppercase tracking-widest mt-1">Rating</span>
                 </div>
               </div>
-
-              <div className="flex items-center justify-center gap-3 text-primary mb-8">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <MessageSquare size={20} />
-                </div>
-                <h3 className="font-label-bold text-xs uppercase tracking-[0.3em]">Neural Performance Insight</h3>
-              </div>
-              
-              <p className="font-body-lg text-lg text-primary leading-relaxed mb-8 italic font-medium">
-                "{currentFeedback.feedback}"
-              </p>
-
-              <button
-                onClick={moveToNext}
-                className="w-full py-4 rounded-xl bg-primary text-on-primary font-display font-bold text-base hover:shadow-lg hover:-translate-y-1 transition-all flex items-center justify-center gap-3 group shadow-lg shadow-primary/20"
-              >
-                {isLastQuestion ? 'Finalize Mission Report' : 'Next Strategic Challenge'}
-                <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
-              </button>
+              <h3 className="font-label-bold text-label-sm text-secondary uppercase tracking-widest flex items-center gap-sm">
+                <span className="material-symbols-outlined text-[14px]">chat_bubble</span> Performance Insight
+              </h3>
             </div>
-          </div>
+            
+            <p className="font-body-lg text-body-lg text-primary leading-relaxed max-w-xl italic">
+              "{currentFeedback.feedback}"
+            </p>
+
+            <button
+              onClick={moveToNext}
+              className="bg-primary text-on-primary px-xl py-lg rounded-pebble font-label-bold text-label-bold hover:shadow-lg transition-all flex items-center gap-md group"
+            >
+              {isLastQuestion ? 'Finish Session' : 'Next Question'}
+              <span className="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+            </button>
+          </motion.div>
         )}
 
-        {/* PHASE: QUESTION */}
+        {/* QUESTION PHASE */}
         {phase === 'question' && (
-          <div className="flex-1 flex flex-col relative z-20">
-            <section className={`flex-1 flex flex-col justify-center items-center text-center max-w-5xl mx-auto w-full transition-all duration-1000 ${questionVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>
-              
-              <div className="mb-6 h-10 flex items-center justify-center">
+          <div className="flex-1 flex flex-col p-lg md:p-xl lg:p-container-padding gap-xl">
+            {/* Question Stage */}
+            <div className={`flex-1 flex flex-col justify-center items-center gap-lg transition-all duration-500 ${questionVisible ? 'opacity-100' : 'opacity-0 translate-y-4'}`}>
+              <div className="flex flex-col items-center gap-md text-center max-w-2xl">
                 {(isSpeaking || isListening) && (
-                  <div className="flex items-center gap-4 px-6 py-2 rounded-full glass border-primary/20 animate-fade-in shadow-lg">
-                    <div className="flex gap-1.5 h-4 items-end">
-                      {[1, 2, 3, 4, 5, 6].map(i => (
-                        <div key={i} className="w-1.5 bg-primary rounded-full animate-voice-bar" style={{ animationDelay: `${i * 0.1}s` }} />
+                  <div className="flex items-center gap-sm relative animate-fade-in">
+                    <div className="flex gap-1 h-3 items-end mr-1">
+                      {[1, 2, 3, 4, 5].map(i => (
+                        <div key={i} className="w-1 bg-primary rounded-full animate-voice-bar" style={{ animationDelay: `${i * 0.1}s` }} />
                       ))}
                     </div>
-                    <span className="text-[10px] font-label-bold text-primary uppercase tracking-[0.2em]">
-                      {isListening ? 'Neural Intake Active' : 'AI Synchronizing...'}
+                    <span className="text-[9px] font-bold text-primary uppercase tracking-[0.3em]">
+                      {isListening ? 'Listening' : 'Speaking'}
                     </span>
+                    <div className="absolute -bottom-1 left-0 w-full h-[1px] bg-gradient-to-r from-primary to-transparent opacity-40" />
+                  </div>
+                )}
+                <h1 className="font-display text-headline-md text-primary leading-tight tracking-tight">
+                  {currentQuestion.text}
+                </h1>
+                {currentQuestion.subPrompt && (
+                  <div className="bg-surface-container-lowest p-md rounded-pebble border border-outline-variant flex gap-md items-start text-left max-w-lg">
+                    <span className="material-symbols-outlined text-primary text-[16px] shrink-0 mt-1">bolt</span>
+                    <p className="text-body-sm text-secondary leading-relaxed italic">
+                      <span className="font-bold text-primary not-italic">Hint:</span> {currentQuestion.subPrompt}
+                    </p>
                   </div>
                 )}
               </div>
+            </div>
 
-              <h1 className="font-display text-2xl md:text-3xl font-bold text-primary leading-[1.2] mb-6 tracking-tight">
-                {currentQuestion.text}
-              </h1>
-              
-              {currentQuestion.subPrompt && (
-                <div className="flex items-start gap-3 text-left glass border-primary/10 p-4 rounded-2xl max-w-xl shadow-premium">
-                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                    <Zap size={16} />
-                  </div>
-                  <p className="font-body-lg text-secondary leading-relaxed italic text-sm">
-                    <span className="font-bold text-primary not-italic">Briefing:</span> {currentQuestion.subPrompt}
-                  </p>
-                </div>
-              )}
-            </section>
-
-            {/* Response Deck */}
-            <section className="w-full max-w-4xl mx-auto pb-8 animate-slide-up relative">
-              
-              {/* Confidence Selectors */}
-              <div className="flex justify-center gap-2 mb-4">
+            {/* Response Area */}
+            <div className="flex flex-col gap-lg" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+              <div className="flex justify-center gap-sm">
                 {(['low', 'medium', 'high'] as const).map((level) => (
                   <button
                     key={level}
                     onClick={() => setConfidence(level)}
-                    className={`px-6 py-1.5 rounded-full text-[9px] font-label-bold transition-all border uppercase tracking-[0.2em] ${
+                    className={`px-md py-xs rounded-full text-[9px] font-bold uppercase tracking-widest border transition-all ${
                       confidence === level
-                        ? 'bg-primary text-on-primary border-primary shadow-lg shadow-primary/10 scale-105'
-                        : 'glass text-secondary border-outline-variant/30 hover:border-primary/40'
+                        ? 'bg-primary text-on-primary border-primary'
+                        : 'bg-surface-container-lowest text-secondary border-outline-variant hover:border-primary hover:text-primary'
                     }`}
                   >
                     {level}
@@ -300,72 +314,78 @@ export default function MockInterviewPage() {
                 ))}
               </div>
 
-              <div className="relative group">
-                <div className="absolute -inset-4 bg-primary/5 rounded-[48px] blur-3xl opacity-0 group-focus-within:opacity-100 transition-opacity" />
-                <div className="relative glass border border-outline-variant/30 rounded-3xl p-6 focus-within:border-primary/40 transition-all shadow-premium">
-                  
-                  {isListening && (
-                    <div className="absolute top-4 right-6 flex items-center gap-2 animate-pulse">
-                      <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]" />
-                      <span className="text-[9px] font-bold text-red-500 uppercase tracking-widest font-display">Active</span>
+              <div className="bg-surface-container-lowest border border-outline-variant rounded-pebble p-lg flex flex-col gap-lg relative">
+                {isListening && (
+                  <div className="absolute top-md right-md flex items-center gap-sm group cursor-default">
+                    <div className="flex items-center gap-xs relative">
+                      <span className="w-1.5 h-1.5 bg-error rounded-full animate-pulse shadow-[0_0_8px_rgba(211,47,47,0.4)]" />
+                      <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-error">Rec</span>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  <textarea
-                    ref={textareaRef}
-                    className="w-full h-28 bg-transparent border-none outline-none resize-none font-body-lg text-lg text-primary placeholder:text-outline/40 focus:ring-0 p-0 custom-scrollbar leading-relaxed"
-                    placeholder={isListening ? "Listening..." : "Initialize response..."}
-                    value={answerText}
-                    onChange={(e) => setAnswerText(e.target.value)}
-                  />
-                  
-                  <div className="flex flex-col md:flex-row justify-between items-center mt-6 pt-6 border-t border-outline-variant/20 gap-6">
-                    <div className="flex items-center gap-6">
-                      {isSpeechSupported && (
-                        <button
-                          onClick={handleMicToggle}
-                          className={`w-12 h-12 rounded-xl transition-all duration-500 flex items-center justify-center group ${
-                            isListening 
-                              ? 'bg-red-500 text-white shadow-2xl shadow-red-500/40 scale-110' 
-                              : 'bg-primary/10 text-primary hover:bg-primary hover:text-on-primary'
-                          }`}
-                          title={isListening ? 'Stop Capture' : 'Start Capture'}
-                        >
-                          {isListening ? <MicOff size={20} /> : <Mic size={20} className="group-hover:scale-110 transition-transform" />}
-                        </button>
-                      )}
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2 text-primary font-label-bold text-[10px] uppercase tracking-widest">
-                          <ShieldCheck size={14} />
-                          Secure Channel
-                        </div>
-                        <span className="text-[10px] text-outline font-bold uppercase tracking-tighter mt-1">Ready for Assessment</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-6 w-full md:w-auto">
-                      <button 
-                        onClick={() => { stop(); stopListening(); setAnswerText(''); setTimer(0); nextQuestion(); }}
-                        className="text-outline font-label-bold text-xs hover:text-primary transition-colors uppercase tracking-widest px-4"
-                      >
-                        Skip Vector
-                      </button>
+                <textarea
+                  ref={textareaRef}
+                  className="w-full h-20 md:h-24 bg-transparent border-none outline-none resize-none font-body-md text-body-md text-primary placeholder:text-secondary/50 p-0 leading-relaxed custom-scrollbar focus:ring-0"
+                  placeholder={isListening ? "Listening..." : "Provide your response..."}
+                  value={answerText}
+                  onChange={(e) => setAnswerText(e.target.value)}
+                />
+                
+                <div className="flex items-center justify-between pt-md border-t border-outline-variant">
+                  <div className="flex items-center gap-md">
+                    {isSpeechSupported && (
                       <button
-                        onClick={handleSubmit}
-                        disabled={loading || !answerText.trim()}
-                        className="flex-1 md:flex-none px-8 py-3.5 rounded-xl bg-primary text-on-primary font-display font-bold text-base hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-30 disabled:scale-100 flex items-center justify-center gap-3 shadow-lg shadow-primary/20"
+                        onClick={handleMicToggle}
+                        className={`w-10 h-10 rounded-pebble flex items-center justify-center transition-all ${
+                          isListening 
+                            ? 'bg-error text-on-error shadow-lg' 
+                            : 'bg-surface-container text-primary hover:bg-primary hover:text-on-primary'
+                        }`}
                       >
-                        {loading ? <Loader2 className="animate-spin" size={20} /> : <ShieldAlert size={20} />}
-                        {isLastQuestion ? 'Finalize' : 'Submit'}
+                        <span className="material-symbols-outlined text-[18px]">{isListening ? 'mic_off' : 'mic'}</span>
                       </button>
+                    )}
+                    <div className="flex flex-col gap-0">
+                      <span className="text-[9px] font-bold text-secondary uppercase tracking-widest flex items-center gap-xs">
+                        <span className="material-symbols-outlined text-[12px] text-success">verified_user</span> Secure Channel
+                      </span>
                     </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-md">
+                    <button 
+                      onClick={() => {
+                        stop();
+                        stopListening();
+                        setAnswerText('');
+                        setTimer(0);
+                        if (isLastQuestion) {
+                          endSession(0);
+                          navigate(`/feedback/${sessionId}`);
+                        } else {
+                          nextQuestion();
+                        }
+                      }}
+                      className="text-secondary font-label-bold text-label-sm uppercase tracking-widest hover:text-primary transition-colors px-md"
+                    >
+                      Skip
+                    </button>
+                    <button
+                      onClick={handleSubmit}
+                      disabled={loading || !answerText.trim()}
+                      className="bg-primary text-on-primary px-lg py-md rounded-pebble font-label-bold text-label-bold hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-sm"
+                    >
+                      {loading ? <span className="material-symbols-outlined animate-spin text-[16px]">sync</span> : <span className="material-symbols-outlined text-[16px]">gavel</span>}
+                      {isLastQuestion ? 'Finalize' : 'Submit'}
+                    </button>
                   </div>
                 </div>
               </div>
-            </section>
+            </div>
           </div>
         )}
-      </div>
-    </div>
+      </motion.main>
+    </motion.div>
   );
 }

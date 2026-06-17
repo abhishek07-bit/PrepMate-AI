@@ -3,10 +3,11 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 import uuid
+import re
 
 from app.db.database import get_db
 from app.models.models import User
@@ -37,25 +38,37 @@ class TokenResponse(BaseModel):
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
+def _is_firebase_initialized() -> bool:
+    """Check if Firebase Admin SDK is initialized without importing at module level."""
+    try:
+        import firebase_admin
+        return bool(firebase_admin._apps)
+    except ImportError:
+        return False
+
+
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    import firebase_admin
-    from firebase_admin import auth as firebase_auth
-    
     user_id = None
     email = None
     
-    # 1. Try Firebase Verification
-    try:
-        decoded_token = firebase_auth.verify_id_token(token)
-        user_id = decoded_token.get("uid")
-        email = decoded_token.get("email")
-    except Exception:
-        # 2. Fallback to Local JWT
+    # 1. Try Firebase Verification — only if Firebase is initialized
+    if _is_firebase_initialized():
+        try:
+            from firebase_admin import auth as firebase_auth
+            decoded_token = firebase_auth.verify_id_token(token)
+            user_id = decoded_token.get("uid")
+            email = decoded_token.get("email")
+        except Exception:
+            # Firebase verification failed, fall through to JWT
+            pass
+    
+    # 2. Fallback to Local JWT if Firebase didn't authenticate
+    if user_id is None:
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
             user_id = payload.get("sub")
@@ -88,8 +101,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     
     return user
 
-
-import re
 
 @router.post("/register")
 async def register(req: RegisterRequest, db: Session = Depends(get_db)):
@@ -148,6 +159,33 @@ async def login(req: LoginRequest, db: Session = Depends(get_db)):
         },
     }
 
+
+class UpdateProfileRequest(BaseModel):
+    firstName: str
+    lastName: str
+
+@router.put("/update-profile")
+async def update_profile(
+    req: UpdateProfileRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Re-query user in the active db session to avoid detached instance issues
+    user = db.query(User).filter(User.id == current_user.id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.first_name = req.firstName
+    user.last_name = req.lastName
+    db.commit()
+    db.refresh(user)
+    return {
+        "id": user.id,
+        "email": user.email,
+        "firstName": user.first_name,
+        "lastName": user.last_name,
+        "createdAt": user.created_at.isoformat(),
+    }
 
 @router.get("/me")
 async def get_me(current_user: User = Depends(get_current_user)):

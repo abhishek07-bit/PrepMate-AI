@@ -5,28 +5,56 @@ interface UseSpeechToTextOptions {
   lang?: string;
 }
 
+const isSpeechSupported =
+  typeof window !== 'undefined' &&
+  !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+
 export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
-  const { onResult, lang = 'en-US' } = options;
+  const { lang = 'en-US' } = options;
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const recognitionRef = useRef<any>(null);
+  const onResultRef = useRef(options.onResult);
+
+  // Keep the callback ref in sync without re-creating the recognition instance
+  useEffect(() => {
+    onResultRef.current = options.onResult;
+  }, [options.onResult]);
 
   useEffect(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      console.error('Speech recognition not supported in this browser.');
-      return;
-    }
+    if (!isSpeechSupported) return;
 
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
-    recognition.continuous = true;
+    
+    // iOS Safari does NOT support continuous mode — it silently fails.
+    // Detect iOS/iPadOS and disable continuous for compatibility.
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    recognition.continuous = !isIOS;
     recognition.interimResults = true;
     recognition.lang = lang;
 
+    let shouldRestart = false;
+
     recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
+    recognition.onend = () => {
+      // On iOS (non-continuous mode), auto-restart if user hasn't explicitly stopped
+      if (shouldRestart && isIOS) {
+        try {
+          recognition.start();
+        } catch {
+          setIsListening(false);
+        }
+        return;
+      }
+      setIsListening(false);
+    };
     recognition.onerror = (event: any) => {
+      // 'no-speech' is common on iOS and not a real error
+      if (event.error === 'no-speech') return;
       console.error('Speech recognition error:', event.error);
+      shouldRestart = false;
       setIsListening(false);
     };
 
@@ -44,24 +72,50 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
 
       const fullTranscript = finalTranscript || interimTranscript;
       setTranscript(fullTranscript);
-      if (onResult && event.results[event.results.length - 1].isFinal) {
-        onResult(event.results[event.results.length - 1][0].transcript);
+      if (onResultRef.current && event.results[event.results.length - 1].isFinal) {
+        onResultRef.current(event.results[event.results.length - 1][0].transcript);
       }
     };
 
     recognitionRef.current = recognition;
-  }, [lang, onResult]);
+    // Expose shouldRestart control
+    (recognitionRef.current as any).__shouldRestart = (val: boolean) => { shouldRestart = val; };
+
+    // Cleanup: stop recognition on unmount
+    return () => {
+      shouldRestart = false;
+      try {
+        recognition.stop();
+      } catch {
+        // Already stopped
+      }
+    };
+  }, [lang]);
 
   const startListening = useCallback(() => {
     if (recognitionRef.current && !isListening) {
       setTranscript('');
-      recognitionRef.current.start();
+      // Enable iOS auto-restart
+      (recognitionRef.current as any).__shouldRestart?.(true);
+      try {
+        recognitionRef.current.start();
+      } catch {
+        // Already started
+      }
     }
   }, [isListening]);
 
   const stopListening = useCallback(() => {
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
+    if (recognitionRef.current) {
+      // Disable iOS auto-restart before stopping
+      (recognitionRef.current as any).__shouldRestart?.(false);
+      if (isListening) {
+        try {
+          recognitionRef.current.stop();
+        } catch {
+          // Already stopped
+        }
+      }
     }
   }, [isListening]);
 
@@ -75,6 +129,6 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
     startListening,
     stopListening,
     resetTranscript,
-    isSupported: !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition),
+    isSupported: isSpeechSupported,
   };
 }

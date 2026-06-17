@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Brain, Code, Globe, Clock, Play, Target, Search, Loader2, Zap, AlertCircle, Shield, ChevronRight, Activity } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { motion, Variants } from 'framer-motion';
 import { companyAPI } from '../../api/client';
 
-const iconMap: Record<string, any> = {
-  Brain,
-  Code,
-  Globe,
-  Target,
-  Zap
+const iconMap: Record<string, string> = {
+  Brain: 'psychology',
+  Code: 'code',
+  Globe: 'globe',
+  Target: 'track_changes',
+  Zap: 'bolt'
 };
 
 interface PrepScenario {
@@ -32,7 +32,21 @@ interface CompanyPrepData {
   isFallback?: boolean;
 }
 
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 15 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
+
 export default function CompanyPrepPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialCompany = searchParams.get('company') || 'Google';
   
@@ -79,135 +93,162 @@ export default function CompanyPrepPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto w-full px-6 pb-20 animate-fade-in">
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      className="w-full flex flex-col gap-xl pb-xl"
+    >
       
-      {/* Search Header */}
-      <header className="pt-12 mb-16 flex flex-col md:flex-row justify-between md:items-end gap-10">
-        <div className="space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary font-label-bold text-[10px] uppercase tracking-[0.2em]">
-            <Activity size={14} />
-            Strategic Dossier
+      {/* Header */}
+      <header className="flex flex-col gap-sm md:gap-md mb-lg md:mb-xl">
+        <div className="flex items-center gap-sm">
+          <div className="flex items-center gap-sm relative">
+            <span className="w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--color-primary-rgb),0.4)]" />
+            <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">
+              Company Research
+            </span>
+            <div className="absolute -bottom-1 left-0 w-8 h-[1px] bg-gradient-to-r from-primary to-transparent opacity-40" />
           </div>
-          <h1 className="font-display text-5xl md:text-6xl font-bold text-primary tracking-tight">
-            Target <span className="text-secondary">Intel.</span>
-          </h1>
-          <p className="font-body-lg text-secondary text-xl max-w-2xl leading-relaxed">
-            Neural mapping of company-specific interview vectors and cultural engineering benchmarks.
-          </p>
         </div>
-        
-        <form onSubmit={handleSearch} className="relative w-full md:w-[400px] group">
-          <div className="absolute inset-0 bg-primary/5 rounded-[24px] blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="relative glass rounded-[24px] border border-outline-variant/30 p-2 flex gap-2">
-            <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-outline" size={20} />
-              <input 
-                type="text" 
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search Target Company..." 
-                className="w-full bg-transparent pl-12 pr-4 py-3 font-display font-bold text-primary placeholder:text-outline/50 outline-none"
-              />
-            </div>
-            <button type="submit" disabled={loading || !searchInput.trim() || searchInput.trim() === company} className="bg-primary text-on-primary font-display font-bold px-8 rounded-2xl hover:opacity-90 disabled:opacity-50 transition-all flex items-center justify-center">
-              {loading ? <Loader2 size={20} className="animate-spin" /> : 'Map'}
-            </button>
-          </div>
-        </form>
+        <h1 className="font-display text-display text-primary leading-none tracking-tighter">Company Preparation</h1>
+        <p className="font-body-lg text-body-lg text-secondary">Research companies and prepare for your interviews with specific company information.</p>
       </header>
+        
+      <motion.form variants={itemVariants} onSubmit={handleSearch} className="w-full md:w-96 flex flex-col gap-sm">
+        <div className="bg-surface-container-low border border-outline-variant rounded-pebble p-xs flex gap-sm items-center">
+          <div className="flex-1 relative flex items-center">
+            <span className="material-symbols-outlined absolute left-md text-secondary text-[18px]">search</span>
+            <input 
+              type="text" 
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search companies..." 
+              className="w-full bg-transparent pl-11 pr-md py-md font-label-bold text-sm text-primary placeholder:text-secondary/50 outline-none focus:ring-0 border-none"
+            />
+          </div>
+          <button 
+            type="submit" 
+            disabled={loading || !searchInput.trim() || searchInput.trim() === company} 
+            className="bg-primary text-on-primary font-label-bold text-label-bold px-lg py-md rounded-pebble transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center"
+          >
+            {loading ? <span className="material-symbols-outlined animate-spin text-[18px]">sync</span> : 'Search'}
+          </button>
+        </div>
+      </motion.form>
 
       {loading ? (
-        <div className="py-32 flex flex-col items-center justify-center">
-          <div className="w-20 h-20 rounded-[30px] bg-primary/10 flex items-center justify-center mb-8 shadow-inner animate-pulse">
-            <Activity className="text-primary animate-spin" size={32} />
+        <motion.div variants={itemVariants} className="py-xl flex flex-col items-center justify-center gap-lg text-center">
+          <span className="material-symbols-outlined text-[48px] text-primary animate-spin">sync</span>
+          <div className="flex flex-col gap-xs">
+            <p className="font-headline-sm text-headline-sm text-primary">Searching for {company}...</p>
+            <p className="text-[10px] text-secondary opacity-50 uppercase tracking-widest font-bold">Loading company information</p>
           </div>
-          <p className="font-display text-2xl text-secondary text-center">Infiltrating {company} databases...</p>
-          <p className="text-[10px] text-outline uppercase tracking-[0.3em] font-bold mt-2">Neural Extraction in progress</p>
-        </div>
+        </motion.div>
       ) : error ? (
-        <div className="py-32 flex flex-col items-center justify-center">
-          <div className="p-6 rounded-[30px] bg-red-50 border border-red-100 text-red-600 font-display font-bold text-lg">
+        <motion.div variants={itemVariants} className="py-xl flex flex-col items-center justify-center gap-lg">
+          <div className="bg-error/10 text-error p-lg rounded-pebble border border-error/20 font-label-bold text-label-bold uppercase tracking-widest">
             {error}
           </div>
-        </div>
+        </motion.div>
       ) : data ? (
-        <div className="space-y-16 animate-slide-up">
-          
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 pb-12 border-b border-outline-variant/30">
-            <div className="space-y-6 max-w-4xl">
-              <div className="flex items-center gap-3">
-                <div className="px-4 py-2 bg-primary/10 border border-primary/20 rounded-full flex items-center gap-3">
-                  <Shield size={16} className="text-primary" />
-                  <span className="font-label-bold text-xs text-primary uppercase tracking-widest">{data.company} Sector Verified</span>
-                </div>
-                {data.isFallback && (
-                  <div className="px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-full flex items-center gap-3">
-                    <AlertCircle size={16} className="text-amber-600" />
-                    <span className="font-label-bold text-xs text-amber-600 uppercase tracking-widest">Cached Intel</span>
-                  </div>
-                )}
+        <motion.div variants={containerVariants} className="flex flex-col gap-xl">
+          <motion.article variants={itemVariants} className="bg-surface-container-low border border-outline-variant rounded-pebble p-md md:p-lg md:p-xl lg:p-container-padding flex flex-col gap-lg">
+            <div className="flex flex-wrap gap-xl">
+              <div className="flex items-center gap-sm relative">
+                <span className="w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--color-primary-rgb),0.4)]" />
+                <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary flex items-center gap-xs">
+                  <span className="material-symbols-outlined text-[12px]">verified_user</span> {data.company}
+                </span>
+                <div className="absolute -bottom-1 left-0 w-8 h-[1px] bg-gradient-to-r from-primary to-transparent opacity-40" />
               </div>
-              <h2 className="font-display text-4xl font-bold text-primary italic">"The {data.company} Protocol"</h2>
-              <p className="font-body-lg text-secondary text-xl leading-relaxed">
-                {data.description}
-              </p>
-            </div>
-          </div>
-
-          {/* Core Philosophy: Premium Bento Grid */}
-          <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {data.corePhilosophy?.map((card, idx) => {
-              const Icon = iconMap[card.icon] || Brain;
-              return (
-                <div key={idx} className="glass rounded-[32px] p-10 flex flex-col justify-between group hover:bg-white/40 transition-all duration-500 shadow-premium">
-                  <div>
-                    <div className="w-14 h-14 rounded-[20px] bg-primary/5 border border-primary/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
-                      <Icon size={28} className="text-primary" />
-                    </div>
-                    <h3 className="font-display text-2xl font-bold text-primary mb-4 tracking-tight">{card.title}</h3>
-                    <p className="font-body-md text-secondary leading-relaxed">{card.desc}</p>
-                  </div>
-                  <div className="mt-8 pt-6 border-t border-outline-variant/30 flex justify-end">
-                    <ChevronRight size={20} className="text-outline group-hover:text-primary group-hover:translate-x-2 transition-all" />
-                  </div>
+              {data.isFallback && (
+                <div className="flex items-center gap-sm relative">
+                  <span className="w-1.5 h-1.5 bg-secondary rounded-full opacity-50" />
+                  <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-secondary flex items-center gap-xs">
+                    <span className="material-symbols-outlined text-[12px]">warning</span> Cached Data
+                  </span>
+                  <div className="absolute -bottom-1 left-0 w-8 h-[1px] bg-gradient-to-r from-secondary to-transparent opacity-20" />
                 </div>
+              )}
+            </div>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-lg">
+              <div className="flex flex-col gap-md flex-1">
+                <h2 className="font-display text-headline-sm md:text-headline-lg text-primary italic leading-none tracking-tight">"{data.company}"</h2>
+                <p className="font-body-sm md:text-body-lg text-secondary leading-relaxed">
+                  {data.description}
+                </p>
+              </div>
+              <button 
+                onClick={() => navigate(`/interview/setup?company=${encodeURIComponent(data.company)}`)}
+                className="w-full md:w-auto bg-primary text-on-primary font-label-bold text-label-bold px-lg py-md rounded-pebble transition-all active:scale-95 shadow-lg flex items-center justify-center gap-md group shrink-0"
+              >
+                <span>Practice for {data.company}</span>
+                <span className="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+              </button>
+            </div>
+          </motion.article>
+
+          {/* Core Values Grid */}
+          <motion.section variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-md md:gap-lg">
+            {data.corePhilosophy?.map((card, idx) => {
+              const iconName = iconMap[card.icon] || 'psychology';
+              return (
+                <article key={idx} className="bg-surface-container-low border border-outline-variant rounded-pebble p-md md:p-lg md:p-xl lg:p-container-padding flex flex-col gap-md md:gap-lg transition-all hover:border-primary group">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-pebble bg-surface-container-lowest border border-outline-variant flex items-center justify-center text-primary">
+                    <span className="material-symbols-outlined text-[20px] md:text-[24px]">{iconName}</span>
+                  </div>
+                  <div className="flex flex-col gap-xs">
+                    <h3 className="font-headline-sm md:text-headline-sm text-primary">{card.title}</h3>
+                    <p className="text-body-sm md:text-body-md text-secondary leading-relaxed">{card.desc}</p>
+                  </div>
+                  <div className="mt-auto pt-md flex justify-end">
+                    <span className="material-symbols-outlined text-[18px] text-secondary group-hover:text-primary group-hover:translate-x-1 transition-all">arrow_forward</span>
+                  </div>
+                </article>
               );
             })}
-          </section>
+          </motion.section>
 
-          {/* Question Bank: Elite List */}
-          <section className="space-y-10">
-            <div className="flex items-end justify-between">
-              <h2 className="font-display text-4xl font-bold text-primary">Strategic Scenarios</h2>
-              <div className="text-[10px] font-bold text-outline uppercase tracking-widest bg-surface-container px-3 py-1 rounded-full">
-                {data.targetedScenarios?.length} Active Vectors
-              </div>
+          {/* Strategic Scenarios */}
+          <motion.section variants={itemVariants} className="flex flex-col gap-md md:gap-lg">
+            <div className="flex items-end justify-between border-b border-outline-variant pb-md">
+              <h2 className="font-headline-sm md:text-headline-md text-primary">Strategic Scenarios</h2>
+              <span className="text-[9px] md:text-[10px] font-bold text-secondary uppercase tracking-widest">
+                {data.targetedScenarios?.length} Vectors
+              </span>
             </div>
             
-            <div className="grid grid-cols-1 gap-4">
+            <div className="flex flex-col gap-md">
               {data.targetedScenarios?.map((question, idx) => (
-                <div key={idx} className="glass rounded-[28px] p-8 flex flex-col md:flex-row md:items-center justify-between gap-8 hover:shadow-premium group transition-all duration-300">
-                  <div className="flex-1 space-y-4">
-                    <div className="flex items-center gap-4">
-                      <span className="px-3 py-1 bg-primary/5 rounded-full font-label-bold text-[10px] text-primary uppercase tracking-widest border border-primary/10">
-                        {question.category}
-                      </span>
-                      <div className="flex items-center gap-2 text-outline font-label-bold text-[10px] uppercase tracking-widest">
-                        <Clock size={14} /> {question.time} Limit
+                <article key={idx} className="bg-surface-container-low border border-outline-variant rounded-pebble p-md md:p-lg flex flex-col md:flex-row md:items-center justify-between gap-md md:gap-lg hover:border-primary transition-all group">
+                  <div className="flex-1 flex flex-col gap-sm md:gap-md">
+                    <div className="flex items-center gap-md">
+                      <div className="flex items-center gap-sm relative">
+                        <span className="w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--color-primary-rgb),0.4)]" />
+                        <span className="text-[9px] font-bold uppercase tracking-[0.3em] text-primary">
+                          {question.category}
+                        </span>
+                        <div className="absolute -bottom-1 left-0 w-6 h-[1px] bg-gradient-to-r from-primary to-transparent opacity-40" />
+                      </div>
+                      <div className="flex items-center gap-xs text-secondary font-bold text-[9px] uppercase tracking-widest">
+                        <span className="material-symbols-outlined text-[12px]">schedule</span> {question.time}
                       </div>
                     </div>
-                    <h4 className="font-display text-xl font-bold text-primary">{question.title}</h4>
-                    <p className="font-body-md text-secondary max-w-3xl italic">"{question.desc}"</p>
+                    <div className="flex flex-col gap-xs">
+                      <h4 className="font-label-bold text-label-bold text-primary">{question.title}</h4>
+                      <p className="text-body-sm text-secondary leading-relaxed italic">"{question.desc}"</p>
+                    </div>
                   </div>
-                  <button className="shrink-0 w-16 h-16 rounded-[24px] bg-surface-container border border-outline-variant/30 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-on-primary transition-all group-hover:shadow-lg shadow-primary/20">
-                    <Play size={24} />
+                  <button className="w-full md:w-14 h-10 md:h-14 rounded-pebble bg-surface-container-lowest border border-outline-variant flex items-center justify-center text-secondary transition-all group-hover:bg-primary group-hover:text-on-primary group-hover:border-primary group-hover:shadow-lg">
+                    <span className="material-symbols-outlined text-[20px]">play_arrow</span>
                   </button>
-                </div>
+                </article>
               ))}
             </div>
-          </section>
-        </div>
+          </motion.section>
+        </motion.div>
       ) : null}
-    </div>
+    </motion.div>
   );
 }

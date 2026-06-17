@@ -8,7 +8,9 @@ export default function AuthLayout() {
     return <Navigate to="/dashboard" replace />;
   }
 
-    <main className="flex-1 flex items-center justify-center p-lg">
+  return (
+    <main className="flex-1 flex items-center justify-center p-lg pt-[calc(var(--spacing-navbar-h)+24px)]">
       <Outlet />
     </main>
+  );
 }
