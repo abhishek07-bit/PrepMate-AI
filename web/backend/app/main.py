@@ -1,9 +1,15 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+
 from app.services import ai_service
 from app.services.ai_service import AIProviderError
-import os
+from app.auth.routes import router as auth_router
+from app.resume.routes import router as resume_router
+from app.api.routes import router as interview_router
+from app.analytics.routes import router as analytics_router
+from app.db.database import init_db
 
 app = FastAPI(
     title="PrepMate AI API",
@@ -60,29 +66,17 @@ async def ai_provider_status():
     }
 
 
-# Auth routes
-from app.auth.routes import router as auth_router
+# Include Routers
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
-
-# Resume routes
-from app.resume.routes import router as resume_router
 app.include_router(resume_router, prefix="/api/resume", tags=["Resume"])
-
-# Interview routes
-from app.api.routes import router as interview_router
 app.include_router(interview_router, prefix="/api/interview", tags=["Interview"])
-
-# Analytics routes
-from app.analytics.routes import router as analytics_router
 app.include_router(analytics_router, prefix="/api/analytics", tags=["Analytics"])
 
 
 @app.on_event("startup")
 async def startup():
-    from app.db.database import init_db
     import firebase_admin
     from firebase_admin import credentials
-    import os
 
     # Init Database
     init_db()

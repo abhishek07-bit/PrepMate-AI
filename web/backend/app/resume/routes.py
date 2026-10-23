@@ -9,6 +9,8 @@ from app.db.database import get_db
 from app.models.models import Resume, User
 from app.auth.routes import get_current_user
 from app.core.config import settings
+from app.services.ai_service import analyze_resume, analyze_job_match
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -118,8 +120,7 @@ def get_skills(
 
     return {"skills": resume.skills, "fileName": resume.file_name}
 
-from app.services.ai_service import analyze_resume, analyze_job_match
-from pydantic import BaseModel
+
 
 class MatchRequest(BaseModel):
     jobDescription: str

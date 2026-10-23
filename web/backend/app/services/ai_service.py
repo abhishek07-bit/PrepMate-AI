@@ -44,7 +44,7 @@ class AIProviderError(Exception):
 async def _call_gemini(prompt: str, system_prompt: str = "", temperature: float = 0.7) -> AIResponse:
     """Google Gemini API (native REST — not OpenAI-compatible)."""
     start = time.monotonic()
-    model = "gemini-2.0-flash"
+    model = "gemini-2.5-flash"
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={settings.GEMINI_API_KEY}"
 
     contents = []
@@ -81,7 +81,7 @@ async def _call_gemini(prompt: str, system_prompt: str = "", temperature: float 
 async def _call_groq(prompt: str, system_prompt: str = "", temperature: float = 0.7) -> AIResponse:
     """Groq API (OpenAI-compatible)."""
     start = time.monotonic()
-    model = "llama-3.3-70b-versatile"
+    model = "openai/gpt-oss-120b"
     url = "https://api.groq.com/openai/v1/chat/completions"
 
     messages = []
@@ -117,7 +117,7 @@ async def _call_groq(prompt: str, system_prompt: str = "", temperature: float = 
 async def _call_openrouter(prompt: str, system_prompt: str = "", temperature: float = 0.7) -> AIResponse:
     """OpenRouter API (OpenAI-compatible, routes to many models)."""
     start = time.monotonic()
-    model = "google/gemini-2.0-flash-001"
+    model = "google/gemini-2.5-flash"
     url = "https://openrouter.ai/api/v1/chat/completions"
 
     messages = []
@@ -129,7 +129,7 @@ async def _call_openrouter(prompt: str, system_prompt: str = "", temperature: fl
         "model": model,
         "messages": messages,
         "temperature": temperature,
-        "max_tokens": 4096,
+        "max_tokens": 2048,
     }
     headers = {
         "Authorization": f"Bearer {settings.OPENROUTER_API_KEY}",
@@ -155,7 +155,7 @@ async def _call_openrouter(prompt: str, system_prompt: str = "", temperature: fl
 async def _call_cerebras(prompt: str, system_prompt: str = "", temperature: float = 0.7) -> AIResponse:
     """Cerebras API (OpenAI-compatible, ultra-fast inference)."""
     start = time.monotonic()
-    model = "llama3.1-8b"
+    model = "qwen-3.8-27b"
     url = "https://api.cerebras.ai/v1/chat/completions"
 
     messages = []
