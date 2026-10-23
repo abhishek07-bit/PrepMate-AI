@@ -2,11 +2,8 @@ import axios from 'axios';
 import { safeGetItem, safeRemoveItem } from '../utils/safeStorage';
 
 // Use window.location.hostname so local network testing on mobile devices routes to the correct computer IP instead of localhost on the phone
-const API_BASE_URL = import.meta.env?.VITE_API_URL || (import.meta.env?.PROD ? '' : `http://${window.location.hostname}:8000/api`);
-
-if (import.meta.env?.PROD && !API_BASE_URL) {
-  console.error("CRITICAL: VITE_API_URL is not set in production environment variables.");
-}
+const DEFAULT_PROD_API = 'https://prepmate-api-47v8.onrender.com/api';
+const API_BASE_URL = import.meta.env?.VITE_API_URL || (import.meta.env?.PROD ? DEFAULT_PROD_API : `http://${window.location.hostname}:8000/api`);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
