@@ -1,9 +1,17 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { auth, googleProvider, isFirebaseConfigured } from '../lib/firebase';
-import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile, onAuthStateChanged } from 'firebase/auth';
+import { 
+  signInWithPopup, 
+  signInWithRedirect,
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut, 
+  updateProfile, 
+  onAuthStateChanged,
+  sendPasswordResetEmail
+} from 'firebase/auth';
 import type { User } from '../types';
-import { safeId } from '../utils/safeId';
 import { safeStorage } from '../utils/safeStorage';
 import { authAPI } from '../api/client';
 
@@ -88,7 +96,6 @@ export const useAuthStore = create<AuthState>()(
       sendPasswordReset: async (email: string) => {
         if (!isFirebaseConfigured()) return { error: 'Auth service not configured.' };
         try {
-          const { sendPasswordResetEmail } = await import('firebase/auth');
           await sendPasswordResetEmail(auth, email);
           return {};
         } catch (error: any) {
@@ -108,7 +115,6 @@ export const useAuthStore = create<AuthState>()(
           );
           let result;
           if (isMobileWebView) {
-            const { signInWithRedirect } = await import('firebase/auth');
             await signInWithRedirect(auth, googleProvider);
             return {};
           }
@@ -121,7 +127,6 @@ export const useAuthStore = create<AuthState>()(
               /popup/i.test(popupError.message || '')
             ) {
               console.warn('[PrepMate] Popup blocked or failed. Falling back to redirect.');
-              const { signInWithRedirect } = await import('firebase/auth');
               await signInWithRedirect(auth, googleProvider);
               return {};
             }

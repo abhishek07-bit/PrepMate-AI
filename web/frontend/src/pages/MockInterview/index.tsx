@@ -39,7 +39,6 @@ export default function MockInterviewPage() {
 
   const { 
     isListening, 
-    transcript, 
     startListening, 
     stopListening,
     isSupported: isSpeechSupported 
