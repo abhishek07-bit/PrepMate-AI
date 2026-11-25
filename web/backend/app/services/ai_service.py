@@ -2,10 +2,10 @@
 PrepMate AI — Multi-Provider AI Service with Fallback Stack
 
 Provider Priority (high performance -> low):
-  1. Gemini 2.5 Flash     (Google — best quality/speed ratio)
-  2. Groq                 (Groq — fast inference, strong model)
-  3. OpenRouter Gemini    (OpenRouter — reliable fallback)
-  4. Cerebras             (Cerebras — ultra-fast fallback)
+  1. Gemini 2.5 Flash     (Google — gemini-2.5-flash)
+  2. Groq                 (Groq — openai/gpt-oss-120b)
+  3. OpenRouter Gemini    (OpenRouter — google/gemini-2.5-flash)
+  4. Cerebras             (Cerebras — qwen-3.8-27b)
 
 Each provider implements the same interface. On failure (rate limit, timeout, error),
 the system automatically falls through to the next provider.

@@ -1,0 +1,35 @@
+# Node / Frontend
+node_modules/
+dist/
+build/
+npm-debug.log*
+
+# Python / Backend
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+*.db
+
+# Environments & Secrets
+.env
+.env.*
+!.env.example
+firebase-service-account.json
+
+# Local uploads & archives
+web/backend/uploads/*
+!web/backend/uploads/.gitkeep
+prepmate.zip
+prepmate-hosting/
+
+# OS & IDEs
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo

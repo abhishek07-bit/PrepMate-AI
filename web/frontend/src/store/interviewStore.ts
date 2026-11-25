@@ -23,7 +23,6 @@ interface InterviewState {
   questions: Question[];
   answers: Answer[];
   currentQuestionIndex: number;
-  timeRemaining: number;
   isActive: boolean;
   loading: boolean;
 
@@ -35,8 +34,6 @@ interface InterviewState {
   setQuestions: (questions: Question[]) => void;
   addAnswer: (answer: Answer) => void;
   nextQuestion: () => void;
-  setTimeRemaining: (time: number) => void;
-  startSession: () => void;
   endSession: (score: number) => void;
   reset: () => void;
   fetchSessions: () => Promise<void>;
@@ -53,7 +50,6 @@ export const useInterviewStore = create<InterviewState>()(
       questions: [],
       answers: [],
       currentQuestionIndex: 0,
-      timeRemaining: 0,
       isActive: false,
       loading: false,
       sessions: [],
@@ -63,8 +59,6 @@ export const useInterviewStore = create<InterviewState>()(
       setQuestions: (questions) => set({ questions }),
       addAnswer: (answer) => set((state) => ({ answers: [...state.answers, answer] })),
       nextQuestion: () => set((state) => ({ currentQuestionIndex: state.currentQuestionIndex + 1 })),
-      setTimeRemaining: (time) => set({ timeRemaining: time }),
-      startSession: () => set({ isActive: true }),
       endSession: (score) => {
         const state = get();
         const scoredAnswers = state.answers.filter((a) => typeof a.score === 'number');
@@ -98,7 +92,6 @@ export const useInterviewStore = create<InterviewState>()(
           questions: [],
           answers: [],
           currentQuestionIndex: 0,
-          timeRemaining: 0,
           isActive: false,
         }),
       

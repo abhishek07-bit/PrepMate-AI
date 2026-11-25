@@ -82,9 +82,9 @@ Your data is utilized strictly to provide, personalize, and improve your experie
 
 3. AI Processing, Data Security, and Third Parties
 To provide our intelligent services, your inputs (such as resume text and transcribed interview answers) are processed by our secure, enterprise-grade AI fallback stack (including Gemini, Groq, OpenRouter, and Cerebras). 
-- We employ robust data sanitization: We strip away obvious personal identifiers from your text before sending it to our AI partners.
+- We employ data sanitization: We redact obvious contact identifiers (email addresses and phone numbers) from resume text before sending it to our AI partners.
 - We never sell your personal data. Your data is never shared with third-party marketers, advertisers, or external recruiters.
-- Data is encrypted in transit and at rest within our PostgreSQL database.
+- Data is encrypted in transit and stored in our database.
 
 4. Cookies and Tracking Technologies
 We use cookies and similar local storage mechanisms (like Zustand persistence) to:
@@ -94,9 +94,9 @@ We use cookies and similar local storage mechanisms (like Zustand persistence) t
 
 5. Your Data Rights
 You retain complete control over your digital footprint on PrepMate AI:
-- Access and Update: You can view and modify your profile details at any time in the Settings.
-- Data Portability: You can export your feedback reports and interview history.
-- Right to Erasure: You can permanently delete your account and all associated data (including resumes and interview history) directly from the dashboard or by contacting support.
+- Access and Update: You can view and modify your profile details at any time in Settings.
+- Data Portability: You can export your feedback reports directly from each session results page.
+- Right to Erasure: You can permanently delete your uploaded resumes or your entire account and associated data directly from Settings.
 
 6. Changes to This Privacy Policy
 We may update this policy as our platform evolves or legal requirements change. Significant updates will be communicated via email or a prominent notice on the platform.
