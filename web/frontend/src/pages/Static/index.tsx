@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
 interface StaticPageProps {
@@ -5,28 +6,66 @@ interface StaticPageProps {
   content: string;
 }
 
-function parseSections(content: string) {
-  const lines = content.split('\n').filter(l => l.trim());
-  const sections: { heading: string; items: string[] }[] = [];
-  let current: { heading: string; items: string[] } | null = null;
+interface ParsedContent {
+  intro: string[];
+  sections: { heading: string; blocks: Array<{ type: 'p'; text: string } | { type: 'ul'; items: string[] }> }[];
+}
 
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    if (/^\d+\.\s|^#/.test(trimmed) || (trimmed.endsWith(':') && trimmed.length < 60)) {
-      if (current) sections.push(current);
-      current = { heading: trimmed.replace(/^#\s*/, '').replace(/^\d+\.\s*/, ''), items: [] };
+function renderInlineFormatting(text: string): ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, idx) => {
+    if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+      return (
+        <strong key={idx} className="text-primary font-semibold">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return part;
+  });
+}
+
+function parseStaticContent(content: string): ParsedContent {
+  const lines = content.split('\n');
+  const intro: string[] = [];
+  const sections: ParsedContent['sections'] = [];
+  let current: ParsedContent['sections'][number] | null = null;
+
+  const pushBullet = (itemText: string) => {
+    const targetBlocks = current ? current.blocks : null;
+    if (!targetBlocks) {
+      intro.push(itemText);
+      return;
+    }
+    const lastBlock = targetBlocks[targetBlocks.length - 1];
+    if (lastBlock && lastBlock.type === 'ul') {
+      lastBlock.items.push(itemText);
     } else {
-      if (!current) current = { heading: '', items: [] };
-      current.items.push(trimmed);
+      targetBlocks.push({ type: 'ul', items: [itemText] });
+    }
+  };
+
+  for (const rawLine of lines) {
+    const trimmed = rawLine.trim();
+    if (!trimmed) continue;
+
+    if (/^#{1,3}\s+/.test(trimmed)) {
+      if (current) sections.push(current);
+      current = { heading: trimmed.replace(/^#{1,3}\s+/, ''), blocks: [] };
+    } else if (/^[-*]\s+/.test(trimmed)) {
+      pushBullet(trimmed.replace(/^[-*]\s+/, ''));
+    } else if (!current) {
+      intro.push(trimmed);
+    } else {
+      current.blocks.push({ type: 'p', text: trimmed });
     }
   }
+
   if (current) sections.push(current);
-  return sections;
+  return { intro, sections };
 }
 
 export default function StaticPage({ title, content }: StaticPageProps) {
-  const sections = parseSections(content);
+  const { intro, sections } = parseStaticContent(content);
 
   return (
     <div className="w-full max-w-max-width mx-auto px-lg md:px-xl lg:px-2xl pt-[calc(var(--spacing-navbar-h)+24px)] pb-2xl animate-fade-in">
@@ -42,17 +81,33 @@ export default function StaticPage({ title, content }: StaticPageProps) {
         <article className="flex-1 min-w-0">
           <header className="mb-xl pb-xl border-b border-outline-variant">
             <h1 className="font-display text-headline-lg md:text-display text-primary leading-none tracking-tighter">{title}</h1>
-            <p className="font-body-lg text-body-lg text-secondary mt-md max-w-2xl">{sections[0]?.items[0] || ''}</p>
+            {intro.length > 0 && (
+              <div className="flex flex-col gap-sm mt-md max-w-2xl">
+                {intro.map((paragraph, idx) => (
+                  <p key={idx} className="font-body-lg text-body-lg text-secondary leading-relaxed">
+                    {renderInlineFormatting(paragraph)}
+                  </p>
+                ))}
+              </div>
+            )}
           </header>
 
           <div className="flex flex-col gap-xl">
-            {sections.slice(1).map((section, i) => (
+            {sections.map((section, i) => (
               <section key={i} id={`section-${i}`} className="flex flex-col gap-md scroll-mt-24">
                 <h2 className="font-headline-md text-headline-md text-primary tracking-tight">{section.heading}</h2>
                 <div className="flex flex-col gap-sm font-body-md text-body-md text-secondary leading-relaxed">
-                  {section.items.map((item, j) => (
-                    <p key={j}>{item}</p>
-                  ))}
+                  {section.blocks.map((block, j) =>
+                    block.type === 'ul' ? (
+                      <ul key={j} className="list-disc pl-lg flex flex-col gap-xs">
+                        {block.items.map((item, k) => (
+                          <li key={k}>{renderInlineFormatting(item)}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p key={j}>{renderInlineFormatting(block.text)}</p>
+                    ),
+                  )}
                 </div>
               </section>
             ))}
@@ -60,13 +115,13 @@ export default function StaticPage({ title, content }: StaticPageProps) {
         </article>
 
         {/* TOC Sidebar */}
-        {sections.length > 2 && (
+        {sections.length > 1 && (
           <aside className="hidden lg:block w-72 shrink-0">
             <div className="sticky top-[96px]">
               <nav className="bg-surface-container-low border border-outline-variant rounded-pebble p-lg flex flex-col gap-md">
                 <h3 className="font-label-bold text-label-bold text-primary uppercase tracking-widest">On this page</h3>
                 <div className="flex flex-col gap-xs">
-                  {sections.slice(1).map((section, i) => (
+                  {sections.map((section, i) => (
                     <a
                       key={i}
                       href={`#section-${i}`}

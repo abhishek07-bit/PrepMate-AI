@@ -16,6 +16,10 @@ export default function ForgotPasswordPage() {
       setError('Email is required');
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError('Enter a valid email address');
+      return;
+    }
     
     setLoading(true);
     const { error: resetError } = await sendPasswordReset(email);
@@ -51,7 +55,7 @@ export default function ForgotPasswordPage() {
             </Link>
           </div>
         ) : (
-          <form className="flex flex-col gap-lg" onSubmit={handleSubmit}>
+          <form className="flex flex-col gap-lg" onSubmit={handleSubmit} noValidate>
             <div className="flex flex-col gap-xs">
               <label className="font-label-bold text-label-sm text-primary uppercase tracking-widest pl-1" htmlFor="resetEmail">Email</label>
               <input
@@ -61,6 +65,7 @@ export default function ForgotPasswordPage() {
                 id="resetEmail"
                 placeholder="you@email.com"
                 type="email"
+                autoComplete="email"
                 disabled={loading}
               />
               {error && <span className="text-error font-label-bold text-[10px] pl-1">{error}</span>}

@@ -234,9 +234,10 @@ export default function Navbar() {
       </div>
 
       {/* Mobile Drawer */}
-      <div 
+      <div
+        aria-hidden={!mobileMenuOpen}
         className={`lg:hidden absolute top-full left-0 w-full overflow-y-auto transition-all duration-300 ease-in-out bg-surface border-outline-variant shadow-elevated transform-gpu ${
-          mobileMenuOpen ? 'opacity-100 border-b' : 'opacity-0 pointer-events-none'
+          mobileMenuOpen ? 'opacity-100 border-b visible' : 'opacity-0 pointer-events-none invisible'
         }`}
         style={{
           maxHeight: mobileMenuOpen ? 'calc(100vh - var(--spacing-navbar-h, 64px))' : '0px',

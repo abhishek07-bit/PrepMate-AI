@@ -82,40 +82,51 @@ export default function SignupPage() {
         </div>
 
         {/* Email Form */}
-        <form className="flex flex-col gap-lg" onSubmit={handleSubmit(onSubmit)}>
+        <form className="flex flex-col gap-lg" onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-md">
             <div className="flex flex-col gap-xs">
               <label className="font-label-bold text-label-sm text-primary uppercase tracking-widest pl-1" htmlFor="firstName">First Name</label>
               <input
-                {...register('firstName', { required: 'Required' })}
+                {...register('firstName', { required: 'First name is required' })}
                 className="w-full bg-surface-container-lowest border border-outline-variant rounded-pebble py-md px-lg font-body-md text-body-md text-primary outline-none focus:border-primary transition-colors"
                 id="firstName"
                 placeholder="First name"
                 type="text"
+                autoComplete="given-name"
               />
+              {errors.firstName && <span className="text-error font-label-bold text-[10px] pl-1">{errors.firstName.message}</span>}
             </div>
             <div className="flex flex-col gap-xs">
               <label className="font-label-bold text-label-sm text-primary uppercase tracking-widest pl-1" htmlFor="lastName">Last Name</label>
               <input
-                {...register('lastName', { required: 'Required' })}
+                {...register('lastName', { required: 'Last name is required' })}
                 className="w-full bg-surface-container-lowest border border-outline-variant rounded-pebble py-md px-lg font-body-md text-body-md text-primary outline-none focus:border-primary transition-colors"
                 id="lastName"
                 placeholder="Last name"
                 type="text"
+                autoComplete="family-name"
               />
+              {errors.lastName && <span className="text-error font-label-bold text-[10px] pl-1">{errors.lastName.message}</span>}
             </div>
           </div>
 
           <div className="flex flex-col gap-xs">
             <label className="font-label-bold text-label-sm text-primary uppercase tracking-widest pl-1" htmlFor="signupEmail">Email Address</label>
             <input
-              {...register('email', { required: 'Email is required' })}
+              {...register('email', {
+                required: 'Email is required',
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: 'Enter a valid email address',
+                },
+              })}
               className="w-full bg-surface-container-lowest border border-outline-variant rounded-pebble py-md px-lg font-body-md text-body-md text-primary outline-none focus:border-primary transition-colors"
               id="signupEmail"
               placeholder="you@email.com"
               type="email"
               autoComplete="email"
             />
+            {errors.email && <span className="text-error font-label-bold text-[10px] pl-1">{errors.email.message}</span>}
           </div>
           
           <div className="flex flex-col gap-xs">

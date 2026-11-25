@@ -78,15 +78,22 @@ export default function LoginPage() {
         </div>
 
         {/* Email Form */}
-        <form className="flex flex-col gap-lg" onSubmit={handleSubmit(onSubmit)}>
+        <form className="flex flex-col gap-lg" onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="flex flex-col gap-xs">
             <label className="font-label-bold text-label-sm text-primary uppercase tracking-widest pl-1" htmlFor="email">Email</label>
             <input
-              {...register('email', { required: 'Email is required' })}
+              {...register('email', {
+                required: 'Email is required',
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: 'Enter a valid email address',
+                },
+              })}
               className="w-full bg-surface-container-lowest border border-outline-variant rounded-pebble py-md px-lg font-body-md text-body-md text-primary outline-none focus:border-primary transition-colors"
               id="email"
               placeholder="you@email.com"
               type="email"
+              autoComplete="email"
             />
             {errors.email && <span className="text-error font-label-bold text-[10px] pl-1">{errors.email.message}</span>}
           </div>
@@ -102,6 +109,7 @@ export default function LoginPage() {
               id="password"
               placeholder="••••••••"
               type="password"
+              autoComplete="current-password"
             />
             {errors.password && <span className="text-error font-label-bold text-[10px] pl-1">{errors.password.message}</span>}
           </div>

@@ -69,6 +69,12 @@ export default function Footer() {
               © {new Date().getFullYear()} PREPMATE AI. v2.0
             </p>
             <div className="hidden md:block w-px h-3 bg-outline-variant" />
+            <Link to="/about" className="font-label-bold text-[9px] text-secondary hover:text-primary uppercase tracking-widest transition-all">
+              About
+            </Link>
+            <Link to="/contact" className="font-label-bold text-[9px] text-secondary hover:text-primary uppercase tracking-widest transition-all">
+              Contact
+            </Link>
             <Link to="/careers" className="font-label-bold text-[9px] text-secondary hover:text-primary uppercase tracking-widest transition-all">
               Careers
             </Link>
