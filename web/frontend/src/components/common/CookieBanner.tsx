@@ -34,12 +34,14 @@ export default function CookieBanner() {
       </div>
       <div className="flex flex-wrap items-center justify-center gap-sm shrink-0 w-full md:w-auto">
         <button
+          type="button"
           onClick={handleDecline}
           className="px-lg py-sm rounded-pebble border border-outline-variant font-label-bold text-label-sm text-secondary hover:bg-surface-container-low transition-colors flex-1 md:flex-none text-center"
         >
           Decline Non-Essential
         </button>
         <button
+          type="button"
           onClick={handleAccept}
           className="px-lg py-sm rounded-pebble bg-primary text-on-primary font-label-bold text-label-sm hover:shadow-md transition-all active:scale-95 flex-1 md:flex-none text-center"
         >

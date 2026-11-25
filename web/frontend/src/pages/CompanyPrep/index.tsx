@@ -45,34 +45,45 @@ const itemVariants: Variants = {
   show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
 };
 
+const POPULAR_COMPANIES = ['Google', 'Amazon', 'Meta', 'Microsoft', 'Stripe', 'OpenAI'];
+
 export default function CompanyPrepPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialCompany = searchParams.get('company') || '';
-  
-  const [company, setCompany] = useState(initialCompany);
-  const [searchInput, setSearchInput] = useState(initialCompany);
+  const urlCompany = searchParams.get('company') || '';
+
+  const [company, setCompany] = useState(urlCompany);
+  const [searchInput, setSearchInput] = useState(urlCompany);
   const [data, setData] = useState<CompanyPrepData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-
+  useEffect(() => {
+    if (urlCompany) {
+      setCompany(urlCompany);
+      setSearchInput(urlCompany);
+    }
+  }, [urlCompany]);
 
   useEffect(() => {
+    let active = true;
     async function fetchData() {
       if (!company) return;
       setLoading(true);
       setError('');
       try {
         const response = await companyAPI.getPrep(company);
-        setData(response.data as CompanyPrepData);
-      } catch (err: unknown) {
-        setError('Strategic intelligence retrieval failed.');
+        if (active) setData(response.data as CompanyPrepData);
+      } catch {
+        if (active) setError('Strategic intelligence retrieval failed.');
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
     fetchData();
+    return () => {
+      active = false;
+    };
   }, [company]);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -106,8 +117,8 @@ export default function CompanyPrepPage() {
         <p className="font-body-lg text-body-lg text-secondary">Research companies and prepare for your interviews with specific company information.</p>
       </header>
         
-      <motion.form variants={itemVariants} onSubmit={handleSearch} className="w-full md:w-96 flex flex-col gap-sm">
-        <div className="bg-surface-container-low border border-outline-variant rounded-pebble p-xs flex gap-sm items-center">
+      <motion.form variants={itemVariants} onSubmit={handleSearch} className="w-full md:w-auto max-w-2xl flex flex-col gap-md">
+        <div className="w-full md:w-96 bg-surface-container-low border border-outline-variant rounded-pebble p-xs flex gap-sm items-center">
           <div className="flex-1 relative flex items-center">
             <span className="material-symbols-outlined absolute left-md text-secondary text-[18px]">search</span>
             <input 
@@ -125,6 +136,26 @@ export default function CompanyPrepPage() {
           >
             {loading ? <span className="material-symbols-outlined animate-spin text-[18px]">sync</span> : 'Search'}
           </button>
+        </div>
+        <div className="flex flex-wrap gap-sm">
+          {POPULAR_COMPANIES.map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              onClick={() => {
+                setSearchInput(preset);
+                setCompany(preset);
+                setSearchParams({ company: preset });
+              }}
+              className={`px-md py-xs rounded-full text-label-sm font-label-bold uppercase tracking-widest border transition-all ${
+                company.toLowerCase() === preset.toLowerCase()
+                  ? 'bg-primary text-on-primary border-primary'
+                  : 'bg-surface text-secondary border-outline-variant hover:border-primary hover:text-primary'
+              }`}
+            >
+              {preset}
+            </button>
+          ))}
         </div>
       </motion.form>
 
@@ -144,7 +175,7 @@ export default function CompanyPrepPage() {
         </motion.div>
       ) : data ? (
         <motion.div variants={containerVariants} className="flex flex-col gap-xl">
-          <motion.article variants={itemVariants} className="bg-surface-container-low border border-outline-variant rounded-pebble p-md md:p-lg md:p-xl lg:p-container-padding flex flex-col gap-lg">
+          <motion.article variants={itemVariants} className="bg-surface-container-low border border-outline-variant rounded-pebble p-md md:p-xl lg:p-container-padding flex flex-col gap-lg">
             <div className="flex flex-wrap gap-xl">
               <div className="flex items-center gap-sm relative">
                 <span className="w-1.5 h-1.5 bg-primary rounded-full shadow-[0_0_8px_rgba(var(--color-primary-rgb),0.4)]" />
@@ -170,7 +201,8 @@ export default function CompanyPrepPage() {
                   {data.description}
                 </p>
               </div>
-              <button 
+              <button
+                type="button"
                 onClick={() => navigate(`/interview/setup?company=${encodeURIComponent(data.company)}`)}
                 className="w-full md:w-auto bg-primary text-on-primary font-label-bold text-label-bold px-lg py-md rounded-pebble transition-all active:scale-95 shadow-lg flex items-center justify-center gap-md group shrink-0"
               >
@@ -185,7 +217,7 @@ export default function CompanyPrepPage() {
             {data.corePhilosophy?.map((card, idx) => {
               const iconName = iconMap[card.icon] || 'psychology';
               return (
-                <article key={idx} className="bg-surface-container-low border border-outline-variant rounded-pebble p-md md:p-lg md:p-xl lg:p-container-padding flex flex-col gap-md md:gap-lg transition-all hover:border-primary group">
+                <article key={idx} className="bg-surface-container-low border border-outline-variant rounded-pebble p-md md:p-xl lg:p-container-padding flex flex-col gap-md md:gap-lg transition-all hover:border-primary group">
                   <div className="w-10 h-10 md:w-12 md:h-12 rounded-pebble bg-surface-container-lowest border border-outline-variant flex items-center justify-center text-primary">
                     <span className="material-symbols-outlined text-[20px] md:text-[24px]">{iconName}</span>
                   </div>

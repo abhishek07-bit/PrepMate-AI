@@ -10,6 +10,15 @@ def generate_uuid():
     return str(uuid.uuid4())
 
 
+def format_utc_iso(dt: datetime | None) -> str:
+    """Serialize a naive or aware datetime as an explicit UTC ISO-8601 timestamp."""
+    if dt is None:
+        return datetime.now(timezone.utc).isoformat()
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc).isoformat()
+    return dt.astimezone(timezone.utc).isoformat()
+
+
 class User(Base):
     __tablename__ = "users"
 

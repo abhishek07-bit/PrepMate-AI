@@ -19,6 +19,10 @@ export function useVoice(options: UseVoiceOptions = {}) {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
   useEffect(() => {
+    setIsEnabled(initialEnabled);
+  }, [initialEnabled]);
+
+  useEffect(() => {
     if (!isSynthesisSupported) return;
     const loadVoices = () => {
       try {
@@ -76,6 +80,7 @@ export function useVoice(options: UseVoiceOptions = {}) {
 
         utterance.onstart = () => setIsSpeaking(true);
         utterance.onend = () => {
+          utteranceRef.current = null;
           setIsSpeaking(false);
           if (resumeIntervalRef.current) {
             clearInterval(resumeIntervalRef.current);
@@ -83,6 +88,7 @@ export function useVoice(options: UseVoiceOptions = {}) {
           }
         };
         utterance.onerror = () => {
+          utteranceRef.current = null;
           setIsSpeaking(false);
           if (resumeIntervalRef.current) {
             clearInterval(resumeIntervalRef.current);

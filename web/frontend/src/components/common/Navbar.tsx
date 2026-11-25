@@ -66,8 +66,18 @@ export default function Navbar() {
         setProfileMenuOpen(false);
       }
     };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setProfileMenuOpen(false);
+        setMobileMenuOpen(false);
+      }
+    };
     document.addEventListener('pointerdown', handleClickOutside);
-    return () => document.removeEventListener('pointerdown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -120,7 +130,8 @@ export default function Navbar() {
 
         {/* Right Side */}
         <div className="flex items-center gap-sm relative shrink-0">
-          <button 
+          <button
+            type="button"
             onClick={cycleTheme}
             title={`Theme: ${theme}`}
             aria-label="Toggle theme"
@@ -134,9 +145,12 @@ export default function Navbar() {
               {/* Profile Icon (Desktop & Mobile) */}
               <div className="relative" ref={profileMenuRef}>
                 <button
+                  type="button"
                   onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                   title="Profile"
                   aria-label="Open profile menu"
+                  aria-expanded={profileMenuOpen}
+                  aria-haspopup="menu"
                   className={`w-10 h-10 flex items-center justify-center rounded-full border transition-all ${
                     profileMenuOpen 
                       ? 'bg-primary text-on-primary border-primary' 
@@ -176,7 +190,8 @@ export default function Navbar() {
                         Preferences
                       </Link>
                       <div className="h-px bg-outline-variant my-xs" />
-                      <button 
+                      <button
+                        type="button"
                         onClick={handleLogout}
                         className="flex items-center gap-md px-md py-sm rounded-pebble text-error hover:bg-error/10 transition-colors font-label-bold text-[12px] w-full text-left"
                       >
@@ -189,9 +204,11 @@ export default function Navbar() {
               </div>
 
               {/* Hamburger */}
-              <button 
+              <button
+                type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 aria-label="Toggle menu"
+                aria-expanded={mobileMenuOpen}
                 className="lg:hidden w-10 h-10 flex items-center justify-center rounded-full bg-surface-container border border-outline-variant hover:border-primary text-primary transition-all"
               >
                 <span className="material-symbols-outlined text-[20px]">{mobileMenuOpen ? 'close' : 'menu'}</span>
@@ -202,9 +219,11 @@ export default function Navbar() {
               <Link to="/login" className="text-[13px] font-label-bold text-secondary hover:text-primary transition-colors px-md py-sm hidden sm:block">Sign In</Link>
               <Link to="/signup" className="bg-primary text-on-primary px-lg py-sm rounded-full text-[13px] font-label-bold hover:opacity-90 transition-opacity hidden sm:block">Get Started</Link>
               {/* Mobile hamburger for unauthenticated users */}
-              <button 
+              <button
+                type="button"
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 aria-label="Toggle menu"
+                aria-expanded={mobileMenuOpen}
                 className="sm:hidden w-10 h-10 flex items-center justify-center rounded-full bg-surface-container border border-outline-variant hover:border-primary text-primary transition-all"
               >
                 <span className="material-symbols-outlined text-[20px]">{mobileMenuOpen ? 'close' : 'menu'}</span>
@@ -266,7 +285,8 @@ export default function Navbar() {
                 Preferences
               </Link>
               
-              <button 
+              <button
+                type="button"
                 onClick={handleLogout}
                 className="px-md py-md flex items-center gap-md rounded-pebble transition-all font-label-bold text-[13px] text-error hover:bg-error/10 mt-xs"
               >

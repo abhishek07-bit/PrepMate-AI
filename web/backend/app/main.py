@@ -54,6 +54,7 @@ async def lifespan(_app: FastAPI):
     init_db()
     _init_firebase()
     yield
+    await ai_service.close_http_client()
 
 
 app = FastAPI(

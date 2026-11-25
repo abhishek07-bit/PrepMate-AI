@@ -10,19 +10,23 @@ export default function FeedbackPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
     async function fetchFeedback() {
       if (!sessionId) return;
       try {
         const { data } = await interviewAPI.getFeedback(sessionId);
-        setFeedback(data);
+        if (active) setFeedback(data);
       } catch (err) {
         console.error('Failed to load feedback:', err);
-        setError('Failed to load feedback. Please try again.');
+        if (active) setError('Failed to load feedback. Please try again.');
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
     fetchFeedback();
+    return () => {
+      active = false;
+    };
   }, [sessionId]);
 
   const handleExport = () => {
@@ -42,6 +46,9 @@ export default function FeedbackPage() {
       '',
       '── AREAS FOR GROWTH ──',
       ...(feedback.improvements || []).map((s, i) => `${i + 1}. ${s.title}: ${s.description}`),
+      '',
+      '── RECOMMENDED ACTIONS ──',
+      ...(feedback.recommendedActions || []).map((a, i) => `${i + 1}. ${a.title}`),
       '',
       `Generated: ${new Date().toLocaleString()}`,
     ];
@@ -99,7 +106,8 @@ export default function FeedbackPage() {
         <h1 className="font-display text-display text-primary leading-none tracking-tighter">Session Results</h1>
         <p className="font-body-lg text-body-lg text-secondary">Here is a detailed breakdown of your interview performance.</p>
         <div className="flex gap-md">
-          <button 
+          <button
+            type="button"
             onClick={handleExport}
             className="flex items-center gap-sm bg-surface-container-high text-primary px-lg py-md rounded-pebble font-label-bold text-label-bold transition-all hover:bg-surface-container-highest"
           >
@@ -128,9 +136,10 @@ export default function FeedbackPage() {
               <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                 <circle className="text-outline-variant" cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="2" />
                 <circle
+                  pathLength={100}
                   className="text-primary transition-all duration-1000 ease-out"
                   cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="2"
-                  strokeDasharray={`${feedback.overallScore}, 100`}
+                  strokeDasharray={`${Math.max(0, Math.min(100, feedback.overallScore || 0))}, 100`}
                   strokeLinecap="round"
                 />
               </svg>
@@ -235,7 +244,7 @@ export default function FeedbackPage() {
                     key={i}
                     href={action.link}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="bg-surface-container-lowest border border-outline-variant p-md rounded-pebble flex items-center justify-between transition-all hover:border-primary group"
                   >
                     <span className="font-label-bold text-sm text-primary">{action.title}</span>

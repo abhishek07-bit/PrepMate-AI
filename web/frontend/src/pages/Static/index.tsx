@@ -47,7 +47,7 @@ export default function StaticPage({ title, content }: StaticPageProps) {
 
           <div className="flex flex-col gap-xl">
             {sections.slice(1).map((section, i) => (
-              <section key={i} id={`section-${i}`} className="flex flex-col gap-md">
+              <section key={i} id={`section-${i}`} className="flex flex-col gap-md scroll-mt-24">
                 <h2 className="font-headline-md text-headline-md text-primary tracking-tight">{section.heading}</h2>
                 <div className="flex flex-col gap-sm font-body-md text-body-md text-secondary leading-relaxed">
                   {section.items.map((item, j) => (

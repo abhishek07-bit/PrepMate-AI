@@ -7,7 +7,7 @@ from app.core.config import settings
 
 def _sanitize_db_url(url: str) -> str:
     """Normalize and sanitize database URL for SQLAlchemy and psycopg."""
-    if not url or "sqlite" in url:
+    if not url or url.startswith("sqlite"):
         return url
 
     # Handle SQLAlchemy 1.4+ requirement for "postgresql://" prefix
@@ -51,7 +51,7 @@ db_url = _sanitize_db_url(settings.DATABASE_URL)
 
 engine = create_engine(
     db_url,
-    connect_args={"check_same_thread": False} if "sqlite" in db_url else {},
+    connect_args={"check_same_thread": False} if db_url.startswith("sqlite") else {},
     pool_pre_ping=True,  # Test connections before using them
     pool_recycle=3600,   # Recycle connections every hour
 )

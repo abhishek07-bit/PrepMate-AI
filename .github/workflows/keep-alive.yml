@@ -1,0 +1,35 @@
+name: Render Keep-Alive Ping
+
+on:
+  schedule:
+    # Ping every 10 minutes to keep the Render service warm
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping-render:
+    name: Ping PrepMate Render API
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wake and verify /api/health endpoint
+        run: |
+          set -euo pipefail
+          URL="https://prepmate-api-47v8.onrender.com/api/health"
+          BODY_FILE="$(mktemp)"
+          HTTP_CODE="$(curl -sS -o "$BODY_FILE" -w "%{http_code}" \
+            --retry 3 \
+            --retry-delay 10 \
+            --retry-all-errors \
+            --connect-timeout 15 \
+            --max-time 90 \
+            "$URL")"
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response Body: $(cat "$BODY_FILE")"
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "Health check failed with status $HTTP_CODE"
+            exit 1
+          fi

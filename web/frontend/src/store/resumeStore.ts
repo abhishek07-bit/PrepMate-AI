@@ -32,6 +32,7 @@ export interface MatchAnalysis {
 }
 
 interface ResumeState {
+  userId: string | null;
   id: string | null;
   file: { name: string; size: number } | null;
   parsedData: ParsedResume | null;
@@ -40,6 +41,7 @@ interface ResumeState {
   isUploading: boolean;
   isAnalyzing: boolean;
   isMatching: boolean;
+  setUserId: (userId: string | null) => void;
   setResumeId: (id: string | null) => void;
   setFile: (file: { name: string; size: number } | null) => void;
   setParsedData: (data: ParsedResume | null) => void;
@@ -54,6 +56,7 @@ interface ResumeState {
 export const useResumeStore = create<ResumeState>()(
   persist(
     (set) => ({
+      userId: null,
       id: null,
       file: null,
       parsedData: null,
@@ -62,6 +65,7 @@ export const useResumeStore = create<ResumeState>()(
       isUploading: false,
       isAnalyzing: false,
       isMatching: false,
+      setUserId: (userId) => set({ userId }),
       setResumeId: (id) => set({ id }),
       setFile: (file) => set({ file }),
       setParsedData: (data) => set({ parsedData: data }),
@@ -70,12 +74,13 @@ export const useResumeStore = create<ResumeState>()(
       setUploading: (val) => set({ isUploading: val }),
       setAnalyzing: (val) => set({ isAnalyzing: val }),
       setMatching: (val) => set({ isMatching: val }),
-      clearResume: () => set({ id: null, file: null, parsedData: null, analysis: null, matchAnalysis: null }),
+      clearResume: () => set({ userId: null, id: null, file: null, parsedData: null, analysis: null, matchAnalysis: null }),
     }),
     {
       name: 'prepmate-resume',
       storage: safeStorage,
       partialize: (state) => ({
+        userId: state.userId,
         id: state.id,
         file: state.file,
         parsedData: state.parsedData,

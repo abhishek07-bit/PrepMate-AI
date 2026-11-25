@@ -19,13 +19,14 @@ SKILL_PATTERNS = [
 
 
 def extract_pdf_text(b_content: bytes) -> str:
-    """Extract text from PDF bytes safely even when pages return None."""
+    """Extract text from PDF bytes safely even when pages return None or NUL bytes."""
     reader = PdfReader(io.BytesIO(b_content))
-    return " ".join((page.extract_text() or "") for page in reader.pages)
+    text = " ".join((page.extract_text() or "") for page in reader.pages)
+    return text.replace("\x00", "")
 
 
 def extract_docx_text(b_content: bytes) -> str:
-    """Extract text from DOCX paragraphs and tables."""
+    """Extract text from DOCX paragraphs and tables, stripping NUL bytes."""
     from docx import Document
 
     doc = Document(io.BytesIO(b_content))
@@ -35,7 +36,7 @@ def extract_docx_text(b_content: bytes) -> str:
             for cell in row.cells:
                 if cell.text:
                     parts.append(cell.text)
-    return " ".join(parts)
+    return " ".join(parts).replace("\x00", "")
 
 
 def extract_skills(text: str) -> list[str]:

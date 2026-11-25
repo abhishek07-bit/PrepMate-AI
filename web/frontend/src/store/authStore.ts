@@ -4,6 +4,7 @@ import { auth, googleProvider, isFirebaseConfigured } from '../lib/firebase';
 import {
   signInWithPopup,
   signInWithRedirect,
+  getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
@@ -14,8 +15,12 @@ import {
 import type { User } from '../types';
 import { safeStorage } from '../utils/safeStorage';
 import { authAPI } from '../api/client';
+import { useResumeStore } from './resumeStore';
+import { useInterviewStore } from './interviewStore';
+import { useUIStore } from './uiStore';
 
 let authListenersBound = false;
+let lastSyncedUid: string | null = null;
 
 // Helper to translate Firebase technical errors to user-friendly messages
 const getAuthErrorMessage = (error: any): string => {
@@ -87,6 +92,10 @@ export const useAuthStore = create<AuthState>()(
             // Ignore sign-out errors
           }
         }
+        lastSyncedUid = null;
+        useResumeStore.getState().clearResume();
+        useInterviewStore.getState().reset();
+        useInterviewStore.setState({ sessions: [] });
         set({ user: null, token: null, isAuthenticated: false, loading: false });
       },
       updateUser: (updates) =>
@@ -243,12 +252,20 @@ export const useAuthStore = create<AuthState>()(
         if (typeof window !== 'undefined') {
           window.addEventListener('auth-unauthorized', () => {
             if (!auth?.currentUser) {
+              lastSyncedUid = null;
+              useResumeStore.getState().clearResume();
+              useInterviewStore.getState().reset();
+              useInterviewStore.setState({ sessions: [] });
               set({ user: null, token: null, isAuthenticated: false, loading: false });
             }
           });
         }
 
         if (!isFirebaseConfigured() || !auth) return;
+
+        getRedirectResult(auth).catch((error: any) => {
+          useUIStore.getState().addToast(getAuthErrorMessage(error), 'error');
+        });
 
         onIdTokenChanged(auth, async (user) => {
           if (user) {
@@ -270,7 +287,24 @@ export const useAuthStore = create<AuthState>()(
               isAuthenticated: true,
               loading: false,
             });
+
+            if (lastSyncedUid !== user.uid) {
+              lastSyncedUid = user.uid;
+              authAPI.me()
+                .then(({ data }) => {
+                  if (data?.firstName) {
+                    get().updateUser({
+                      firstName: data.firstName,
+                      lastName: data.lastName || '',
+                    });
+                  }
+                })
+                .catch(() => {
+                  // Ignore background sync failure
+                });
+            }
           } else {
+            lastSyncedUid = null;
             set({ user: null, token: null, isAuthenticated: false, loading: false });
           }
         });

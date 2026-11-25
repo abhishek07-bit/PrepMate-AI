@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from app.db.database import get_db
-from app.models.models import Resume, User
+from app.models.models import Resume, User, format_utc_iso
 from app.auth.routes import get_current_user
 from app.core.config import settings
 from app.resume.parser import extract_docx_text, extract_pdf_text, extract_skills
@@ -51,27 +51,30 @@ async def upload_resume(
             detail="Could not extract readable text from file. Ensure it is not an image-only scan.",
         )
 
-    # Save file safely using a UUID filename inside UPLOAD_DIR
-    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-    disk_filename = f"{current_user.id}_{uuid.uuid4().hex}{ext}"
-    file_path = os.path.join(settings.UPLOAD_DIR, disk_filename)
-    with open(file_path, "wb") as f:
-        f.write(content)
+    # Save file safely using a UUID filename inside UPLOAD_DIR and persist DB record off event loop
+    def _save_and_create():
+        os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+        disk_filename = f"{current_user.id}_{uuid.uuid4().hex}{ext}"
+        file_path = os.path.join(settings.UPLOAD_DIR, disk_filename)
+        with open(file_path, "wb") as f:
+            f.write(content)
 
-    extracted_skills = extract_skills(parsed_text_str)
+        extracted_skills = extract_skills(parsed_text_str)
+        new_resume = Resume(
+            user_id=current_user.id,
+            file_name=safe_filename,
+            file_path=file_path,
+            file_size=len(content),
+            skills=extracted_skills,
+            experience=[],
+            parsed_text=parsed_text_str,
+        )
+        db.add(new_resume)
+        db.commit()
+        db.refresh(new_resume)
+        return new_resume
 
-    resume = Resume(
-        user_id=current_user.id,
-        file_name=safe_filename,
-        file_path=file_path,
-        file_size=len(content),
-        skills=extracted_skills,
-        experience=[],
-        parsed_text=parsed_text_str,
-    )
-    db.add(resume)
-    db.commit()
-    db.refresh(resume)
+    resume = await run_in_threadpool(_save_and_create)
 
     return {
         "id": resume.id,
@@ -79,7 +82,7 @@ async def upload_resume(
         "fileSize": f"{len(content) / 1024 / 1024:.1f} MB",
         "fileSizeBytes": len(content),
         "skills": resume.skills,
-        "uploadedAt": resume.uploaded_at.isoformat(),
+        "uploadedAt": format_utc_iso(resume.uploaded_at),
     }
 
 
@@ -109,7 +112,7 @@ def get_latest_resume(
             "fileSizeBytes": resume.file_size,
             "skills": resume.skills or [],
             "analysis": valid_analysis,
-            "uploadedAt": resume.uploaded_at.isoformat() if resume.uploaded_at else None,
+            "uploadedAt": format_utc_iso(resume.uploaded_at),
         }
     }
 
@@ -141,7 +144,10 @@ async def run_resume_analysis(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == current_user.id).first()
+    def _load_resume():
+        return db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == current_user.id).first()
+
+    resume = await run_in_threadpool(_load_resume)
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
 
@@ -153,9 +159,12 @@ async def run_resume_analysis(
         return resume.analysis
 
     analysis_result = await analyze_resume(resume.parsed_text)
-    resume.analysis = analysis_result
-    db.commit()
 
+    def _save_analysis():
+        resume.analysis = analysis_result
+        db.commit()
+
+    await run_in_threadpool(_save_analysis)
     return analysis_result
 
 
@@ -166,7 +175,9 @@ async def match_resume_to_job(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == current_user.id).first()
+    resume = await run_in_threadpool(
+        lambda: db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == current_user.id).first()
+    )
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
 

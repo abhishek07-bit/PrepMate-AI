@@ -34,6 +34,7 @@ export default function Chip({
       {label}
       {removable && (
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             onRemove?.();

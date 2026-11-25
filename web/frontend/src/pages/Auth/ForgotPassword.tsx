@@ -70,6 +70,7 @@ export default function ForgotPasswordPage() {
               className="w-full bg-primary text-on-primary rounded-pebble py-lg font-label-bold text-label-bold hover:shadow-lg transition-all active:scale-[0.98] flex items-center justify-center gap-sm disabled:opacity-50 disabled:active:scale-100"
               type="submit"
               disabled={loading}
+              aria-busy={loading}
             >
               <span className="material-symbols-outlined text-[18px]">
                 {loading ? 'hourglass_empty' : 'send'}

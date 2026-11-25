@@ -67,13 +67,20 @@ export const useInterviewStore = create<InterviewState>()(
       startSession: () => set({ isActive: true }),
       endSession: (score) => {
         const state = get();
+        const scoredAnswers = state.answers.filter((a) => typeof a.score === 'number');
+        const avgAnswerScore =
+          scoredAnswers.length > 0
+            ? Math.round(scoredAnswers.reduce((sum, a) => sum + (a.score || 0), 0) / scoredAnswers.length)
+            : score;
+        const totalDurationSeconds = state.answers.reduce((sum, a) => sum + (a.duration || 0), 0);
+
         const record: SessionRecord = {
           id: state.sessionId || Date.now().toString(),
           role: state.role,
           company: state.company,
           persona: state.persona,
-          score,
-          duration: 45,
+          score: avgAnswerScore,
+          duration: totalDurationSeconds,
           answers: state.answers.map((a) => ({ questionId: a.questionId, score: a.score || 0 })),
           createdAt: new Date().toISOString(),
         };
@@ -111,7 +118,7 @@ export const useInterviewStore = create<InterviewState>()(
     }),
     {
       name: 'prepmate-interview',
-      partialize: (state) => ({ }), // Do not persist sessions locally to avoid split-brain with backend
+      partialize: () => ({ }), // Do not persist sessions locally to avoid split-brain with backend
     }
   )
 );

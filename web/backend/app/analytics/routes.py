@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.db.database import get_db
-from app.models.models import User, InterviewSession, Question, Answer
+from app.models.models import User, InterviewSession, Question, Answer, format_utc_iso
 from app.auth.routes import get_current_user
 import collections
 
@@ -107,7 +107,7 @@ def get_history(
             "status": s.status,
             "score": s.score,
             "duration": s.duration or 0,
-            "createdAt": s.created_at.isoformat(),
+            "createdAt": format_utc_iso(s.created_at),
         }
         for s in sessions
     ]

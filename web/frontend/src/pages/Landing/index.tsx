@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 
 export default function LandingPage() {
-  const { user } = useAuthStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   return (
     <div className="bg-background text-on-background antialiased min-h-screen flex flex-col">
@@ -24,7 +24,7 @@ export default function LandingPage() {
             A simple and effective way to prepare for job interviews. Upload your resume, pick your target company and role, and practice with realistic interview questions tailored to your experience.
           </p>
           <div className="flex gap-md flex-wrap justify-center">
-            {user ? (
+            {isAuthenticated ? (
               <Link
                 to="/dashboard"
                 className="bg-primary text-on-primary font-label-bold text-label-bold px-xl py-md rounded-pebble hover:opacity-90 transition-all duration-300 flex items-center gap-sm"
@@ -100,7 +100,7 @@ export default function LandingPage() {
         <section className="w-full bg-primary text-on-primary py-16 md:py-24 lg:py-[120px] px-lg md:px-xl lg:px-2xl text-center">
           <div className="max-w-3xl mx-auto flex flex-col items-center">
             <h2 className="font-display text-[32px] sm:text-[40px] md:text-[56px] mb-lg tracking-tighter leading-none">Start Practicing Today</h2>
-            <p className="font-body-lg text-body-lg text-outline-variant mb-xl max-w-xl">
+            <p className="font-body-lg text-body-lg text-on-primary/75 mb-xl max-w-xl">
               Practice interviews are the best way to prepare. Start now and feel more confident for your next job interview.
             </p>
             <Link

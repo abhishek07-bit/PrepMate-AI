@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { updateProfile } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
@@ -40,6 +40,13 @@ export default function SettingsPage() {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const settingsFileRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (user) {
+      setFirstName(user.firstName || '');
+      setLastName(user.lastName || '');
+    }
+  }, [user]);
+
   const handleSettingsUpload = async (file: File) => {
     if (file.size > 5 * 1024 * 1024) {
       setUploadError('File too large. Max 5MB.');
@@ -50,6 +57,7 @@ export default function SettingsPage() {
     resume.setFile({ name: file.name, size: file.size });
     try {
       const { data } = await resumeAPI.upload(file);
+      resume.setUserId(user?.id ?? null);
       resume.setResumeId(data.id);
       resume.setParsedData({ skills: data.skills || [], experience: [] });
       resume.setAnalysis(null);
@@ -139,8 +147,9 @@ export default function SettingsPage() {
             }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
                 <div className="flex flex-col gap-sm">
-                  <label className="font-label-bold text-label-sm text-secondary uppercase tracking-widest">First Name</label>
+                  <label htmlFor="settings-first-name" className="font-label-bold text-label-sm text-secondary uppercase tracking-widest">First Name</label>
                   <input
+                    id="settings-first-name"
                     type="text"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
@@ -148,8 +157,9 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div className="flex flex-col gap-sm">
-                  <label className="font-label-bold text-label-sm text-secondary uppercase tracking-widest">Last Name</label>
+                  <label htmlFor="settings-last-name" className="font-label-bold text-label-sm text-secondary uppercase tracking-widest">Last Name</label>
                   <input
+                    id="settings-last-name"
                     type="text"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
@@ -185,17 +195,20 @@ export default function SettingsPage() {
                   </div>
                 </div>
                 <button
+                  type="button"
                   aria-label="Delete Resume"
                   onClick={async () => {
                     const resumeId = resume.id;
-                    resume.clearResume();
                     if (resumeId) {
                       try {
                         await resumeAPI.delete(resumeId);
+                        resume.clearResume();
                         addToast('Resume removed.', 'info');
-                      } catch {
-                        // Already cleared locally
+                      } catch (err: any) {
+                        addToast(err?.response?.data?.detail || 'Failed to delete resume.', 'error');
                       }
+                    } else {
+                      resume.clearResume();
                     }
                   }}
                   className="text-error hover:text-on-error-container transition-colors p-sm rounded-full hover:bg-error-container"
@@ -251,6 +264,7 @@ export default function SettingsPage() {
                 <div className="flex flex-wrap gap-sm">
                   {(['beginner', 'intermediate', 'advanced'] as const).map((level) => (
                     <button
+                      type="button"
                       key={level}
                       onClick={() => setDifficulty(level)}
                       className={
@@ -270,7 +284,7 @@ export default function SettingsPage() {
                   {targetRoles.map((role) => (
                     <span key={role} className="bg-surface-container border border-outline-variant px-md py-xs rounded-full font-label-sm text-label-sm text-primary flex items-center gap-xs">
                       {role}
-                      <button onClick={() => removeRole(role)} className="hover:text-error flex items-center justify-center">
+                      <button type="button" aria-label={`Remove ${role}`} onClick={() => removeRole(role)} className="hover:text-error flex items-center justify-center">
                         <span className="material-symbols-outlined text-[16px]">close</span>
                       </button>
                     </span>
@@ -285,11 +299,12 @@ export default function SettingsPage() {
                         onKeyDown={(e) => e.key === 'Enter' && handleAddRole()}
                         autoFocus
                       />
-                      <button onClick={handleAddRole} className="text-primary flex items-center"><span className="material-symbols-outlined text-[16px]">add</span></button>
-                      <button onClick={() => { setShowAddRole(false); setNewRole(''); }} className="text-secondary flex items-center"><span className="material-symbols-outlined text-[16px]">close</span></button>
+                      <button type="button" aria-label="Confirm add role" onClick={handleAddRole} className="text-primary flex items-center"><span className="material-symbols-outlined text-[16px]">add</span></button>
+                      <button type="button" aria-label="Cancel add role" onClick={() => { setShowAddRole(false); setNewRole(''); }} className="text-secondary flex items-center"><span className="material-symbols-outlined text-[16px]">close</span></button>
                     </div>
                   ) : (
                     <button
+                      type="button"
                       onClick={() => setShowAddRole(true)}
                       className="border border-dashed border-outline-variant px-md py-xs rounded-full font-label-sm text-label-sm text-secondary hover:text-primary hover:border-primary transition-colors flex items-center gap-xs"
                     >
@@ -314,6 +329,7 @@ export default function SettingsPage() {
               <div className="flex bg-surface-container border border-outline-variant rounded-full p-xs">
                 {themeOptions.map(({ value, label, icon }) => (
                   <button
+                    type="button"
                     key={value}
                     onClick={() => setTheme(value)}
                     className={`flex-1 px-md py-sm rounded-full font-label-sm text-label-sm transition-all flex items-center justify-center gap-xs ${
@@ -332,7 +348,7 @@ export default function SettingsPage() {
 
           {/* Sign Out & Account Deletion */}
           <section className="mt-auto pt-lg flex flex-col gap-md">
-            <button onClick={handleLogout} className="text-error font-label-bold text-label-bold hover:underline transition-all flex items-center gap-xs w-fit">
+            <button type="button" onClick={handleLogout} className="text-error font-label-bold text-label-bold hover:underline transition-all flex items-center gap-xs w-fit">
               <span className="material-symbols-outlined text-[18px]">logout</span> Sign Out
             </button>
 

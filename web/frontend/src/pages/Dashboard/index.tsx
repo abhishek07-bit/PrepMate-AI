@@ -68,7 +68,9 @@ export default function DashboardPage() {
             <span className="font-headline-sm md:text-headline-md text-secondary leading-none pb-1 md:pb-2">%</span>
           </div>
           <p className="font-body-sm md:text-body-md text-secondary leading-relaxed">
-            This is your average score across all your practice sessions. Based on your last {totalSessions} practice interviews, you are performing at an {avgScore >= 80 ? 'excellent' : avgScore >= 60 ? 'good' : 'developing'} level.
+            {totalSessions === 0
+              ? 'Complete a practice interview to generate your baseline readiness score.'
+              : `This is your average score across ${totalSessions} completed practice ${totalSessions === 1 ? 'session' : 'sessions'}, placing you at ${avgScore >= 80 ? 'an excellent' : avgScore >= 60 ? 'a good' : 'a developing'} level.`}
           </p>
         </motion.article>
 
@@ -112,7 +114,7 @@ export default function DashboardPage() {
         {/* History Section */}
         <motion.section variants={itemVariants} className="mt-md md:mt-lg">
           <div className="flex items-center justify-between border-b border-outline-variant pb-sm md:pb-md mb-md md:mb-lg">
-            <h2 className="font-headline-sm md:text-headline-md text-primary">Recent Operations</h2>
+            <h2 className="font-headline-sm md:text-headline-md text-primary">Recent Sessions</h2>
             <Link to="/analytics" className="font-label-bold text-[10px] text-secondary hover:text-primary uppercase tracking-widest transition-colors">View All</Link>
           </div>
 
@@ -122,7 +124,7 @@ export default function DashboardPage() {
             </div>
           ) : totalSessions === 0 ? (
             <div className="py-12 md:py-24 text-center border-2 border-dashed border-outline-variant rounded-pebble">
-              <p className="font-body-sm md:text-body-md text-secondary">No historical data found in your neural profile.</p>
+              <p className="font-body-sm md:text-body-md text-secondary">No completed sessions yet. Start your first practice interview above.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-sm md:gap-md">

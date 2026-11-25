@@ -46,11 +46,12 @@ export default function MockInterviewPage() {
     initialEnabled: audioFeedback,
   });
 
-  const { 
-    isListening, 
-    startListening, 
+  const {
+    isListening,
+    transcript,
+    startListening,
     stopListening,
-    isSupported: isSpeechSupported 
+    isSupported: isSpeechSupported
   } = useSpeechToText({
     onResult: (text) => {
       setAnswerText(prev => prev + (prev ? ' ' : '') + text);
@@ -80,7 +81,10 @@ export default function MockInterviewPage() {
   useEffect(() => {
     if (currentQuestion && phase === 'question') {
       setQuestionVisible(false);
-      const timeoutId = setTimeout(() => setQuestionVisible(true), 50);
+      const timeoutId = setTimeout(() => {
+        setQuestionVisible(true);
+        textareaRef.current?.focus();
+      }, 50);
       return () => clearTimeout(timeoutId);
     }
   }, [currentQuestionIndex, currentQuestion, phase]);
@@ -179,6 +183,7 @@ export default function MockInterviewPage() {
     if (isListening) {
       stopListening();
     } else {
+      stop();
       startListening();
     }
   };
@@ -190,7 +195,7 @@ export default function MockInterviewPage() {
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="flex-1 flex flex-col max-w-max-width mx-auto w-full px-lg md:px-xl pt-[96px] pb-lg min-h-[100dvh] overflow-hidden"
+      className="flex-1 flex flex-col max-w-max-width mx-auto w-full px-lg md:px-xl pt-[96px] pb-lg min-h-[100dvh] overflow-y-auto"
     >
 
       {/* HUD */}
@@ -215,6 +220,7 @@ export default function MockInterviewPage() {
               {strictTiming && currentQuestion.timeLimit ? ` / ${formatTime(currentQuestion.timeLimit)}` : ''}
             </span>
             <button
+              type="button"
               onClick={toggle}
               className={`flex items-center gap-sm px-md py-sm rounded-pebble border transition-all ${
                 isEnabled ? 'bg-primary text-on-primary border-primary' : 'bg-surface text-secondary border-outline-variant'
@@ -245,16 +251,17 @@ export default function MockInterviewPage() {
         {phase === 'feedback' && currentFeedback && (
           <motion.div 
             initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-            className="absolute inset-0 z-40 bg-surface flex flex-col items-center justify-center px-lg py-xl text-center gap-xl"
+            className="absolute inset-0 z-40 bg-surface flex flex-col items-center justify-center px-lg py-xl text-center gap-xl overflow-y-auto"
           >
             <div className="flex flex-col items-center gap-md">
               <div className="relative w-24 h-24 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                   <circle className="text-outline-variant" cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="2" />
-                  <circle 
-                    className="text-primary transition-all duration-1000 ease-out" 
+                  <circle
+                    pathLength={100}
+                    className="text-primary transition-all duration-1000 ease-out"
                     cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="2"
-                    strokeDasharray={`${currentFeedback.score}, 100`}
+                    strokeDasharray={`${Math.max(0, Math.min(100, currentFeedback.score || 0))}, 100`}
                     strokeLinecap="round"
                   />
                 </svg>
@@ -273,6 +280,7 @@ export default function MockInterviewPage() {
             </p>
 
             <button
+              type="button"
               onClick={moveToNext}
               className="bg-primary text-on-primary px-xl py-lg rounded-pebble font-label-bold text-label-bold hover:shadow-lg transition-all flex items-center gap-md group"
             >
@@ -320,6 +328,7 @@ export default function MockInterviewPage() {
               <div className="flex justify-center gap-sm">
                 {(['low', 'medium', 'high'] as const).map((level) => (
                   <button
+                    type="button"
                     key={level}
                     onClick={() => setConfidence(level)}
                     className={`px-md py-xs rounded-full text-[9px] font-bold uppercase tracking-widest border transition-all ${
@@ -343,18 +352,32 @@ export default function MockInterviewPage() {
                   </div>
                 )}
 
+                {isListening && transcript && (
+                  <p className="text-xs text-secondary italic pr-12 truncate" aria-live="polite">
+                    Hearing: {transcript}
+                  </p>
+                )}
+
                 <textarea
                   ref={textareaRef}
                   className="w-full h-20 md:h-24 bg-transparent border-none outline-none resize-none font-body-md text-body-md text-primary placeholder:text-secondary/50 p-0 leading-relaxed custom-scrollbar focus:ring-0"
-                  placeholder={isListening ? "Listening..." : "Provide your response..."}
+                  placeholder={isListening ? "Listening..." : "Provide your response... (Ctrl+Enter to submit)"}
                   value={answerText}
                   onChange={(e) => setAnswerText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && answerText.trim() && !loading) {
+                      e.preventDefault();
+                      handleSubmit();
+                    }
+                  }}
                 />
                 
                 <div className="flex items-center justify-between pt-md border-t border-outline-variant">
                   <div className="flex items-center gap-md">
                     {isSpeechSupported && (
                       <button
+                        type="button"
+                        aria-label={isListening ? 'Stop voice dictation' : 'Start voice dictation'}
                         onClick={handleMicToggle}
                         className={`w-10 h-10 rounded-pebble flex items-center justify-center transition-all ${
                           isListening 
@@ -373,7 +396,8 @@ export default function MockInterviewPage() {
                   </div>
                   
                   <div className="flex items-center gap-md">
-                    <button 
+                    <button
+                      type="button"
                       onClick={() => {
                         stop();
                         stopListening();
@@ -391,6 +415,7 @@ export default function MockInterviewPage() {
                       Skip
                     </button>
                     <button
+                      type="button"
                       onClick={handleSubmit}
                       disabled={loading || !answerText.trim()}
                       className="bg-primary text-on-primary px-lg py-md rounded-pebble font-label-bold text-label-bold hover:shadow-lg transition-all disabled:opacity-50 flex items-center gap-sm"

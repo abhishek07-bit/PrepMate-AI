@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useInterviewStore } from '../../store/interviewStore';
 import { useResumeStore } from '../../store/resumeStore';
@@ -44,6 +44,11 @@ export default function InterviewSetupPage() {
   const [rigorLevel, setRigorLevel] = useState(DIFFICULTY_TO_RIGOR[difficulty] ?? 4);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (companyParam) setSelectedCompany(companyParam);
+    if (roleParam) setSelectedRole(roleParam);
+  }, [companyParam, roleParam]);
 
   const rigorLabels = ['Baseline', 'Standard', 'Advanced', 'Expert', 'Bar Raiser'];
 
@@ -124,10 +129,11 @@ export default function InterviewSetupPage() {
             <div className="flex flex-col gap-xl">
               {/* Role */}
               <div className="flex flex-col gap-md">
-                <label className="font-label-bold text-label-sm text-secondary uppercase tracking-widest pl-1">Job Position</label>
+                <label htmlFor="setup-role" className="font-label-bold text-label-sm text-secondary uppercase tracking-widest pl-1">Job Position</label>
                 <div className="relative group">
                   <span className="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary group-focus-within:text-primary transition-colors text-[18px]">search</span>
                   <input
+                    id="setup-role"
                     className="w-full bg-surface-container-lowest border border-outline-variant rounded-pebble py-md pl-12 pr-lg font-body-md text-body-md text-primary outline-none focus:border-primary transition-colors"
                     placeholder="e.g. Principal Architect"
                     value={selectedRole}
@@ -137,6 +143,7 @@ export default function InterviewSetupPage() {
                 <div className="flex flex-wrap gap-sm">
                   {roleChoices.map(role => (
                     <button
+                      type="button"
                       key={role}
                       onClick={() => setSelectedRole(role)}
                       className={`px-md py-xs rounded-full text-label-sm font-label-bold uppercase tracking-widest border transition-all ${
@@ -153,10 +160,11 @@ export default function InterviewSetupPage() {
 
               {/* Company */}
               <div className="flex flex-col gap-md">
-                <label className="font-label-bold text-label-sm text-secondary uppercase tracking-widest pl-1">Company Name</label>
+                <label htmlFor="setup-company" className="font-label-bold text-label-sm text-secondary uppercase tracking-widest pl-1">Company Name</label>
                 <div className="relative group">
                   <span className="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-secondary group-focus-within:text-primary transition-colors text-[18px]">apartment</span>
                   <input
+                    id="setup-company"
                     className="w-full bg-surface-container-lowest border border-outline-variant rounded-pebble py-md pl-12 pr-lg font-body-md text-body-md text-primary outline-none focus:border-primary transition-colors"
                     placeholder="e.g. OpenAI"
                     value={selectedCompany}
@@ -166,6 +174,7 @@ export default function InterviewSetupPage() {
                 <div className="flex flex-wrap gap-sm">
                   {POPULAR_COMPANIES.map(company => (
                     <button
+                      type="button"
                       key={company}
                       onClick={() => setSelectedCompany(company)}
                       className={`px-md py-xs rounded-full text-label-sm font-label-bold uppercase tracking-widest border transition-all ${
@@ -199,6 +208,7 @@ export default function InterviewSetupPage() {
                   const isSelected = selectedPersona === p.id;
                   return (
                     <button
+                      type="button"
                       key={p.id}
                       onClick={() => setSelectedPersona(p.id)}
                       className={`w-full flex items-center gap-lg p-md rounded-pebble text-left transition-all border ${
@@ -261,7 +271,8 @@ export default function InterviewSetupPage() {
                 { label: 'Position', val: selectedRole },
                 { label: 'Company', val: selectedCompany },
                 { label: 'Style', val: selectedPersona.toUpperCase() },
-                { label: 'Difficulty', val: rigorLabels[rigorLevel-1] }
+                { label: 'Difficulty', val: rigorLabels[rigorLevel-1] },
+                ...(resumeSkills.length > 0 ? [{ label: 'Resume Skills', val: `${resumeSkills.slice(0, 4).join(', ')}${resumeSkills.length > 4 ? ` +${resumeSkills.length - 4}` : ''}` }] : [])
               ].map((item, i) => (
                 <div key={i} className="flex flex-col gap-0">
                   <span className="text-on-primary/60 font-label-bold text-[9px] uppercase tracking-widest">{item.label}</span>
@@ -271,6 +282,7 @@ export default function InterviewSetupPage() {
             </div>
 
             <button
+              type="button"
               onClick={handleStart}
               disabled={loading}
               className="w-full bg-on-primary text-primary font-label-bold text-label-bold py-md rounded-pebble flex items-center justify-center gap-sm active:scale-95 transition-all disabled:opacity-50"

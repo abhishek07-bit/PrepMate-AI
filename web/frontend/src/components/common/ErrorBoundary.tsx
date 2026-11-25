@@ -31,12 +31,21 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           <p className="font-body-md text-secondary max-w-lg text-center mb-lg">
             {this.state.error?.message || "An unexpected error occurred."}
           </p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="bg-primary text-on-primary font-label-bold text-label-bold px-6 py-2 rounded-full hover:opacity-90 transition-all"
-          >
-            Reload Page
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-md">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="bg-primary text-on-primary font-label-bold text-label-bold px-6 py-2 rounded-full hover:opacity-90 transition-all"
+            >
+              Reload Page
+            </button>
+            <a
+              href="/"
+              className="bg-surface-container border border-outline-variant text-primary font-label-bold text-label-bold px-6 py-2 rounded-full hover:border-primary transition-all"
+            >
+              Return Home
+            </a>
+          </div>
         </div>
       );
     }

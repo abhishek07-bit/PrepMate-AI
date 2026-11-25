@@ -32,10 +32,12 @@ export default function Button({
   fullWidth = false,
   icon,
   className = '',
+  type = 'button',
   ...props
 }: ButtonProps) {
   return (
     <button
+      type={type}
       className={`rounded-pebble ${variants[variant]} ${sizes[size]} ${
         fullWidth ? 'w-full' : ''
       } flex items-center justify-center gap-sm ${className}`}

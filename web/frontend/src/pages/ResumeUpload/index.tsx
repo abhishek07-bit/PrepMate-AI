@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { resumeAPI } from '../../api/client';
+import { useAuthStore } from '../../store/authStore';
 import { useResumeStore } from '../../store/resumeStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useUIStore } from '../../store/uiStore';
@@ -9,9 +10,10 @@ const isValidHttpUrl = (value?: string) => Boolean(value && /^https?:\/\//i.test
 
 export default function ResumeUploadPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const authUserId = useAuthStore((s) => s.user?.id || null);
   const {
-    id, file, analysis, matchAnalysis, isUploading, isAnalyzing, isMatching,
-    setResumeId, setFile, setParsedData, setAnalysis, setMatchAnalysis, setUploading, setAnalyzing, setMatching, clearResume
+    userId: storedUserId, id, file, analysis, matchAnalysis, isUploading, isAnalyzing, isMatching,
+    setUserId, setResumeId, setFile, setParsedData, setAnalysis, setMatchAnalysis, setUploading, setAnalyzing, setMatching, clearResume
   } = useResumeStore();
   const audioFeedback = useSettingsStore((s) => s.audioFeedback);
   const addToast = useUIStore((s) => s.addToast);
@@ -22,14 +24,21 @@ export default function ResumeUploadPage() {
   const [jobDescription, setJobDescription] = useState('');
   const [analyzingStep, setAnalyzingStep] = useState<string | null>(null);
 
-  // Rehydrate latest resume from backend if local state lacks resume ID
+  // Rehydrate latest resume from backend if missing or scoped to a different user
   useEffect(() => {
-    if (id) return;
+    const userMismatch = Boolean(authUserId && storedUserId && storedUserId !== authUserId);
+    if (userMismatch) {
+      clearResume();
+    } else if (id) {
+      return;
+    }
+
     let active = true;
     resumeAPI.getLatest()
       .then(({ data }) => {
         if (!active || !data?.resume) return;
         const latest = data.resume;
+        setUserId(authUserId);
         setResumeId(latest.id);
         setFile({ name: latest.fileName, size: latest.fileSizeBytes || 0 });
         setParsedData({ skills: latest.skills || [], experience: [] });
@@ -43,7 +52,7 @@ export default function ResumeUploadPage() {
     return () => {
       active = false;
     };
-  }, [id, setResumeId, setFile, setParsedData, setAnalysis]);
+  }, [authUserId, storedUserId, id, setUserId, setResumeId, setFile, setParsedData, setAnalysis, clearResume]);
 
   // Web Speech API for TTS
   useEffect(() => {
@@ -126,6 +135,7 @@ export default function ResumeUploadPage() {
 
     try {
       const { data } = await resumeAPI.upload(selectedFile);
+      setUserId(authUserId);
       setResumeId(data.id);
       setParsedData({
         skills: data.skills || [],
@@ -268,13 +278,14 @@ export default function ResumeUploadPage() {
                     <p className="font-label-bold text-sm text-primary truncate">{file.name}</p>
                     <p className="text-[10px] text-secondary uppercase font-bold tracking-widest">{(file.size / 1024 / 1024).toFixed(1)} MB</p>
                   </div>
-                  <button onClick={handleRemove} className="text-secondary hover:text-error transition-colors">
+                  <button type="button" aria-label="Remove resume" onClick={handleRemove} className="text-secondary hover:text-error transition-colors">
                     <span className="material-symbols-outlined text-[18px]">delete</span>
                   </button>
                 </div>
-                <button 
-                  onClick={handleAnalyze} 
-                  disabled={isAnalyzing} 
+                <button
+                  type="button"
+                  onClick={handleAnalyze}
+                  disabled={isAnalyzing}
                   className="w-full bg-primary text-on-primary font-label-bold text-label-bold py-lg rounded-pebble transition-all active:scale-95 flex items-center justify-center gap-md disabled:opacity-50"
                 >
                   {isAnalyzing ? <span className="material-symbols-outlined text-[18px] animate-spin">sync</span> : <span className="material-symbols-outlined text-[18px]">auto_awesome</span>}
@@ -321,6 +332,7 @@ export default function ResumeUploadPage() {
               className="w-full h-40 bg-surface border border-outline-variant rounded-pebble p-md font-body-md text-body-md text-primary placeholder:text-secondary/50 outline-none focus:border-primary transition-all resize-none custom-scrollbar"
             />
             <button
+              type="button"
               onClick={handleMatch}
               disabled={!id || !jobDescription.trim() || isMatching}
               className="w-full bg-primary text-on-primary font-label-bold text-label-bold py-md rounded-pebble flex items-center justify-center gap-sm disabled:opacity-50 transition-all"
@@ -503,6 +515,8 @@ export default function ResumeUploadPage() {
                     <span className="material-symbols-outlined text-[20px]">auto_awesome</span> Overall Feedback
                   </h4>
                   <button
+                    type="button"
+                    aria-label={isSpeaking ? 'Stop voice summary' : 'Play voice summary'}
                     onClick={toggleSpeech}
                     className={`w-10 h-10 rounded-pebble flex items-center justify-center transition-all ${isSpeaking ? 'bg-primary text-on-primary' : 'bg-surface border border-outline-variant text-secondary'}`}
                   >
@@ -541,12 +555,12 @@ export default function ResumeUploadPage() {
                           <td className="py-md">
                             <div className="flex gap-xs">
                               {isValidHttpUrl(p.github) && (
-                                <a href={p.github} target="_blank" rel="noreferrer" className="text-secondary hover:text-primary text-[10px] font-bold uppercase tracking-widest">
+                                <a href={p.github} target="_blank" rel="noopener noreferrer" className="text-secondary hover:text-primary text-[10px] font-bold uppercase tracking-widest">
                                   GitHub
                                 </a>
                               )}
                               {isValidHttpUrl(p.live) && (
-                                <a href={p.live} target="_blank" rel="noreferrer" className="text-secondary hover:text-primary text-[10px] font-bold uppercase tracking-widest">
+                                <a href={p.live} target="_blank" rel="noopener noreferrer" className="text-secondary hover:text-primary text-[10px] font-bold uppercase tracking-widest">
                                   Live
                                 </a>
                               )}

@@ -33,6 +33,8 @@ export default function ToastContainer() {
             </div>
             
             <button
+              type="button"
+              aria-label="Dismiss notification"
               onClick={() => removeToast(toast.id)}
               className="absolute top-4 right-4 text-outline hover:text-primary transition-colors"
             >

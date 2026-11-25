@@ -15,8 +15,9 @@ export default function Toggle({ checked, onChange, label, description }: Toggle
         </div>
       )}
       <button
+        type="button"
         role="switch"
-        aria-pressed={checked}
+        aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={`w-12 h-6 rounded-full relative transition-colors focus:outline-none ${
           checked ? 'bg-primary' : 'bg-surface border border-outline-variant'

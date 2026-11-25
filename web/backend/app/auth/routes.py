@@ -11,7 +11,7 @@ import uuid
 import re
 
 from app.db.database import get_db
-from app.models.models import Resume, User
+from app.models.models import Resume, User, format_utc_iso
 from app.core.config import settings
 
 router = APIRouter()
@@ -44,7 +44,7 @@ def _serialize_user(user: User) -> dict:
         "email": user.email,
         "firstName": user.first_name,
         "lastName": user.last_name,
-        "createdAt": user.created_at.isoformat() if user.created_at else datetime.now(timezone.utc).isoformat(),
+        "createdAt": format_utc_iso(user.created_at),
     }
 
 
@@ -104,31 +104,44 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     if user_id is None:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    user = db.query(User).filter(User.id == user_id).first()
+    def _resolve_or_prepare_user():
+        found = db.query(User).filter(User.id == user_id).first()
+        if found is not None:
+            return found, None
+        if email:
+            existing_by_email = db.query(User).filter(User.email == email).first()
+            if existing_by_email is not None:
+                if not email_verified:
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Please verify your email address before accessing this account.",
+                    )
+                return existing_by_email, None
+            return None, email
+        return None, None
 
-    # Reconcile if the same verified email already exists under another auth ID
-    if user is None and email and email_verified:
-        user = db.query(User).filter(User.email == email).first()
+    user, jit_email = await run_in_threadpool(_resolve_or_prepare_user)
 
     # 3. Just-in-time user creation (for Social Login / Firebase users)
-    if user is None and email:
-        existing_by_email = db.query(User).filter(User.email == email).first()
-        if existing_by_email:
-            return existing_by_email
-
+    if user is None and jit_email:
         random_pass = str(uuid.uuid4()) + "SOCIAL_LOGIN"
         hashed_pass = await run_in_threadpool(pwd_context.hash, random_pass)
-        first_name, last_name = _split_display_name(display_name, email)
-        user = User(
-            id=user_id,
-            email=email,
-            hashed_password=hashed_pass,
-            first_name=first_name,
-            last_name=last_name,
-        )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
+        first_name, last_name = _split_display_name(display_name, jit_email)
+
+        def _create_jit_user():
+            new_user = User(
+                id=user_id,
+                email=jit_email,
+                hashed_password=hashed_pass,
+                first_name=first_name,
+                last_name=last_name,
+            )
+            db.add(new_user)
+            db.commit()
+            db.refresh(new_user)
+            return new_user
+
+        user = await run_in_threadpool(_create_jit_user)
 
     if user is None:
         raise HTTPException(status_code=401, detail="User not found")
@@ -150,20 +163,25 @@ async def register(req: RegisterRequest, db: Session = Depends(get_db)):
     if not first_name:
         raise HTTPException(status_code=400, detail="First name is required.")
 
-    existing = db.query(User).filter(User.email == email).first()
+    existing = await run_in_threadpool(lambda: db.query(User).filter(User.email == email).first())
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
 
     hashed_pass = await run_in_threadpool(pwd_context.hash, req.password)
-    user = User(
-        email=email,
-        hashed_password=hashed_pass,
-        first_name=first_name,
-        last_name=last_name,
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
+
+    def _create_user():
+        new_user = User(
+            email=email,
+            hashed_password=hashed_pass,
+            first_name=first_name,
+            last_name=last_name,
+        )
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        return new_user
+
+    user = await run_in_threadpool(_create_user)
 
     token = create_access_token({"sub": user.id})
     return {
@@ -176,7 +194,7 @@ async def register(req: RegisterRequest, db: Session = Depends(get_db)):
 @router.post("/login")
 async def login(req: LoginRequest, db: Session = Depends(get_db)):
     email = req.email.strip().lower()
-    user = db.query(User).filter(User.email == email).first()
+    user = await run_in_threadpool(lambda: db.query(User).filter(User.email == email).first())
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
@@ -198,7 +216,7 @@ class UpdateProfileRequest(BaseModel):
 
 
 @router.put("/update-profile")
-async def update_profile(
+def update_profile(
     req: UpdateProfileRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -221,12 +239,12 @@ async def update_profile(
 
 
 @router.get("/me")
-async def get_me(current_user: User = Depends(get_current_user)):
+def get_me(current_user: User = Depends(get_current_user)):
     return _serialize_user(current_user)
 
 
 @router.delete("/me")
-async def delete_account(
+def delete_account(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):

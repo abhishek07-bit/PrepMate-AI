@@ -72,6 +72,15 @@ export default function AnalyticsPage() {
     : 0;
   const trend = lastWeek.length > 0 ? thisWeekAvg - lastWeekAvg : 0;
 
+  // Score stability based on sample standard deviation across completed sessions
+  const stabilityLabel = (() => {
+    if (totalSessions < 3) return 'N/A';
+    const mean = completedSessions.reduce((sum, s) => sum + (s.score || 0), 0) / totalSessions;
+    const variance = completedSessions.reduce((sum, s) => sum + Math.pow((s.score || 0) - mean, 2), 0) / totalSessions;
+    const stdev = Math.sqrt(variance);
+    return stdev < 8 ? 'High' : stdev < 16 ? 'Med' : 'Low';
+  })();
+
   // Group completed sessions by topic
   const topicScores: Record<string, number[]> = {};
   completedSessions.forEach((s) => {
@@ -140,9 +149,7 @@ export default function AnalyticsPage() {
             <h3 className="text-[10px] font-bold uppercase tracking-widest">Stability</h3>
           </div>
           <span className="font-display text-2xl md:text-3xl font-bold text-primary">
-            {totalSessions > 2 
-              ? (Math.abs(trend) < 10 ? 'High' : Math.abs(trend) < 20 ? 'Med' : 'Low')
-              : 'N/A'}
+            {stabilityLabel}
           </span>
         </motion.article>
       </div>
@@ -281,7 +288,7 @@ export default function AnalyticsPage() {
             </article>
           )}
           
-          {sessions.length > 0 && (
+          {completedSessions.length > 0 && (
             <article className="bg-primary text-on-primary rounded-pebble p-lg md:p-xl lg:p-container-padding flex flex-col gap-md shadow-lg">
               <span className="material-symbols-outlined text-[32px] opacity-30">verified_user</span>
               <h4 className="font-headline-sm text-headline-sm">Keep Practicing</h4>

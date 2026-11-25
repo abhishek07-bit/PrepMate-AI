@@ -1,3 +1,4 @@
+import { lazy, Suspense, type ReactNode } from 'react';
 import { createBrowserRouter, Outlet } from 'react-router-dom';
 import AppLayout from '../layouts/AppLayout';
 import AuthLayout from '../layouts/AuthLayout';
@@ -5,21 +6,29 @@ import InterviewLayout from '../layouts/InterviewLayout';
 import ToastContainer from '../components/common/ToastContainer';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
+import NeuralLoader from '../components/common/NeuralLoader';
 
 import LandingPage from '../pages/Landing';
-import LoginPage from '../pages/Auth/Login';
-import SignupPage from '../pages/Auth/Signup';
-import DashboardPage from '../pages/Dashboard';
-import ResumeUploadPage from '../pages/ResumeUpload';
-import InterviewSetupPage from '../pages/InterviewSetup';
-import MockInterviewPage from '../pages/MockInterview';
-import FeedbackPage from '../pages/Feedback';
-import AnalyticsPage from '../pages/Analytics';
-import SettingsPage from '../pages/Settings';
-import CompanyPrepPage from '../pages/CompanyPrep';
 import StaticPage from '../pages/Static';
-import ForgotPasswordPage from '../pages/Auth/ForgotPassword';
 import NotFoundPage from '../pages/NotFound';
+
+const LoginPage = lazy(() => import('../pages/Auth/Login'));
+const SignupPage = lazy(() => import('../pages/Auth/Signup'));
+const ForgotPasswordPage = lazy(() => import('../pages/Auth/ForgotPassword'));
+const DashboardPage = lazy(() => import('../pages/Dashboard'));
+const ResumeUploadPage = lazy(() => import('../pages/ResumeUpload'));
+const InterviewSetupPage = lazy(() => import('../pages/InterviewSetup'));
+const MockInterviewPage = lazy(() => import('../pages/MockInterview'));
+const FeedbackPage = lazy(() => import('../pages/Feedback'));
+const AnalyticsPage = lazy(() => import('../pages/Analytics'));
+const SettingsPage = lazy(() => import('../pages/Settings'));
+const CompanyPrepPage = lazy(() => import('../pages/CompanyPrep'));
+
+const withSuspense = (element: ReactNode) => (
+  <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center"><NeuralLoader message="Loading view..." /></div>}>
+    {element}
+  </Suspense>
+);
 
 const TERMS_CONTENT = `Welcome to PrepMate AI! These Terms and Conditions outline the rules, regulations, and guidelines for using our website and services. By accessing or using our platform, you agree to be bound by these Terms.
 
@@ -262,21 +271,21 @@ export const router = createBrowserRouter([
           {
             element: <AuthLayout />,
             children: [
-              { path: 'login', element: <LoginPage /> },
-              { path: 'signup', element: <SignupPage /> },
-              { path: 'forgot', element: <ForgotPasswordPage /> },
+              { path: 'login', element: withSuspense(<LoginPage />) },
+              { path: 'signup', element: withSuspense(<SignupPage />) },
+              { path: 'forgot', element: withSuspense(<ForgotPasswordPage />) },
             ],
           },
           {
             element: <AppLayout />,
             children: [
-              { path: 'dashboard', element: <DashboardPage /> },
-              { path: 'resume', element: <ResumeUploadPage /> },
-              { path: 'interview/setup', element: <InterviewSetupPage /> },
-              { path: 'feedback/:id', element: <FeedbackPage /> },
-              { path: 'analytics', element: <AnalyticsPage /> },
-              { path: 'settings', element: <SettingsPage /> },
-              { path: 'company-prep', element: <CompanyPrepPage /> },
+              { path: 'dashboard', element: withSuspense(<DashboardPage />) },
+              { path: 'resume', element: withSuspense(<ResumeUploadPage />) },
+              { path: 'interview/setup', element: withSuspense(<InterviewSetupPage />) },
+              { path: 'feedback/:id', element: withSuspense(<FeedbackPage />) },
+              { path: 'analytics', element: withSuspense(<AnalyticsPage />) },
+              { path: 'settings', element: withSuspense(<SettingsPage />) },
+              { path: 'company-prep', element: withSuspense(<CompanyPrepPage />) },
             ],
           },
         ]
@@ -284,7 +293,7 @@ export const router = createBrowserRouter([
       {
         element: <InterviewLayout />,
         children: [
-          { path: 'interview/session', element: <MockInterviewPage /> },
+          { path: 'interview/session', element: withSuspense(<MockInterviewPage />) },
         ],
       },
       {

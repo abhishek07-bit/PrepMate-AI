@@ -24,6 +24,23 @@ logger = logging.getLogger("prepmate.ai")
 
 _EMAIL_RE = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 _PHONE_RE = re.compile(r"(?<!\w)(?:\+?\d{1,3}[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)\d{3}[-.\s]?\d{4}(?!\w)")
+_http_client: Optional[httpx.AsyncClient] = None
+
+
+def _get_http_client() -> httpx.AsyncClient:
+    """Return a shared connection-pooled AsyncClient for external AI requests."""
+    global _http_client
+    if _http_client is None or _http_client.is_closed:
+        _http_client = httpx.AsyncClient(timeout=60.0)
+    return _http_client
+
+
+async def close_http_client() -> None:
+    """Close the shared AsyncClient cleanly on application shutdown."""
+    global _http_client
+    if _http_client is not None and not _http_client.is_closed:
+        await _http_client.aclose()
+    _http_client = None
 
 
 @dataclass
@@ -73,18 +90,21 @@ async def _call_gemini(prompt: str, system_prompt: str = "", temperature: float 
         "Content-Type": "application/json",
     }
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        resp = await client.post(url, json=payload, headers=headers)
-        if resp.status_code == 429:
-            raise AIProviderError("gemini", "Rate limited (429)")
-        if resp.status_code != 200:
-            raise AIProviderError("gemini", f"HTTP {resp.status_code}: {resp.text[:200]}")
+    client = _get_http_client()
+    resp = await client.post(url, json=payload, headers=headers)
+    if resp.status_code == 429:
+        raise AIProviderError("gemini", "Rate limited (429)")
+    if resp.status_code != 200:
+        raise AIProviderError("gemini", f"HTTP {resp.status_code}: {resp.text[:200]}")
 
+    try:
         data = resp.json()
-        try:
-            text = data["candidates"][0]["content"]["parts"][0]["text"]
-        except (KeyError, IndexError):
-            raise AIProviderError("gemini", f"Unexpected response shape: {json.dumps(data)[:200]}")
+    except ValueError:
+        raise AIProviderError("gemini", f"Non-JSON HTTP 200 response: {resp.text[:200]}")
+    try:
+        text = data["candidates"][0]["content"]["parts"][0]["text"]
+    except (KeyError, IndexError, TypeError):
+        raise AIProviderError("gemini", f"Unexpected response shape: {json.dumps(data)[:200]}")
 
     latency = (time.monotonic() - start) * 1000
     return AIResponse(text=text, provider="gemini", model=model, latency_ms=latency)
@@ -120,18 +140,21 @@ async def _call_openai_compatible(
         **(extra_headers or {}),
     }
 
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        resp = await client.post(url, json=payload, headers=headers)
-        if resp.status_code == 429:
-            raise AIProviderError(provider, "Rate limited (429)")
-        if resp.status_code != 200:
-            raise AIProviderError(provider, f"HTTP {resp.status_code}: {resp.text[:200]}")
+    client = _get_http_client()
+    resp = await client.post(url, json=payload, headers=headers)
+    if resp.status_code == 429:
+        raise AIProviderError(provider, "Rate limited (429)")
+    if resp.status_code != 200:
+        raise AIProviderError(provider, f"HTTP {resp.status_code}: {resp.text[:200]}")
 
+    try:
         data = resp.json()
-        try:
-            text = data["choices"][0]["message"]["content"]
-        except (KeyError, IndexError, TypeError):
-            raise AIProviderError(provider, f"Unexpected response shape: {json.dumps(data)[:200]}")
+    except ValueError:
+        raise AIProviderError(provider, f"Non-JSON HTTP 200 response: {resp.text[:200]}")
+    try:
+        text = data["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError):
+        raise AIProviderError(provider, f"Unexpected response shape: {json.dumps(data)[:200]}")
 
     latency = (time.monotonic() - start) * 1000
     return AIResponse(text=text, provider=provider, model=model, latency_ms=latency)
@@ -306,6 +329,32 @@ def _parse_json_response(text: str, expect_array: bool = False) -> Any:
     return json.loads(cleaned)
 
 
+def _coerce_score(value: Any, default: int = 0) -> int:
+    try:
+        return max(0, min(100, int(round(float(value)))))
+    except (TypeError, ValueError):
+        return default
+
+
+def _coerce_str_list(value: Any) -> list[str]:
+    if isinstance(value, list):
+        return [str(item) for item in value if item is not None]
+    if isinstance(value, str) and value.strip():
+        return [value.strip()]
+    return []
+
+
+def _coerce_dict_list(value: Any, required_keys: dict[str, str]) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    out = []
+    for item in value:
+        if isinstance(item, dict):
+            normalized = {k: item.get(k, default) for k, default in required_keys.items()}
+            out.append(normalized)
+    return out
+
+
 async def generate_interview_questions(
     role: str,
     company: str,
@@ -402,9 +451,14 @@ Return ONLY the JSON object."""
 
     try:
         parsed = _parse_json_response(result.text, expect_array=False)
-        raw_score = parsed.get("score", 0)
-        parsed["score"] = max(0, min(100, int(round(float(raw_score)))))
-        return parsed
+        if not isinstance(parsed, dict):
+            raise ValueError("Expected JSON object")
+        return {
+            "score": _coerce_score(parsed.get("score", 0)),
+            "feedback": str(parsed.get("feedback") or ""),
+            "strengths": _coerce_str_list(parsed.get("strengths")),
+            "improvements": _coerce_str_list(parsed.get("improvements")),
+        }
     except (json.JSONDecodeError, ValueError, TypeError):
         logger.error(f"Failed to parse AI evaluation JSON. Raw text: {result.text[:200]}")
         raise AIProviderError("all", f"AI returned invalid JSON: {result.text[:100]}")
@@ -477,9 +531,25 @@ Return ONLY the JSON object."""
 
     try:
         parsed = _parse_json_response(result.text, expect_array=False)
-        raw_score = parsed.get("overallScore", 0)
-        parsed["overallScore"] = max(0, min(100, int(round(float(raw_score)))))
-        return parsed
+        if not isinstance(parsed, dict):
+            raise ValueError("Expected JSON object")
+        vocal_raw = parsed.get("vocalConfidenceData")
+        vocal_clean = []
+        if isinstance(vocal_raw, list):
+            for entry in vocal_raw:
+                if isinstance(entry, dict):
+                    vocal_clean.append({
+                        "label": str(entry.get("label") or "Metric"),
+                        "value": _coerce_score(entry.get("value", 0)),
+                    })
+        return {
+            "overallScore": _coerce_score(parsed.get("overallScore", 0)),
+            "overallAssessment": str(parsed.get("overallAssessment") or ""),
+            "strengths": _coerce_dict_list(parsed.get("strengths"), {"title": "", "description": ""}),
+            "improvements": _coerce_dict_list(parsed.get("improvements"), {"title": "", "description": ""}),
+            "recommendedActions": _coerce_dict_list(parsed.get("recommendedActions"), {"title": "", "link": "/interview/setup"}),
+            "vocalConfidenceData": vocal_clean,
+        }
     except (json.JSONDecodeError, ValueError, TypeError):
         logger.error(f"Failed to parse session feedback JSON. Raw text: {result.text[:200]}")
         raise AIProviderError("all", f"AI failed to generate session feedback: {result.text[:100]}")
@@ -528,7 +598,24 @@ async def analyze_resume(resume_text: str) -> dict:
         parsed = _parse_json_response(result.text, expect_array=False)
         if not isinstance(parsed, dict):
             raise ValueError("Expected JSON object")
-        return parsed
+        return {
+            "atsScore": _coerce_score(parsed.get("atsScore", 0)),
+            "impactScore": _coerce_score(parsed.get("impactScore", 0)),
+            "brevityScore": _coerce_score(parsed.get("brevityScore", 0)),
+            "latexStructureScore": _coerce_score(parsed.get("latexStructureScore", 0)),
+            "overallSummary": str(parsed.get("overallSummary") or ""),
+            "voiceSummary": str(parsed.get("voiceSummary") or ""),
+            "strengths": _coerce_str_list(parsed.get("strengths")),
+            "weaknesses": _coerce_str_list(parsed.get("weaknesses")),
+            "metricsDetected": _coerce_str_list(parsed.get("metricsDetected")),
+            "allLinksFound": _coerce_str_list(parsed.get("allLinksFound")),
+            "projects": _coerce_dict_list(
+                parsed.get("projects"),
+                {"name": "", "github": "Not Found", "live": "Not Found", "stack": "", "impact": ""},
+            ),
+            "recommendedRoles": _coerce_str_list(parsed.get("recommendedRoles")),
+            "criticalFixes": _coerce_str_list(parsed.get("criticalFixes")),
+        }
     except (json.JSONDecodeError, ValueError):
         logger.error(f"Failed to parse resume analysis JSON. Raw text: {result.text[:200]}")
         raise AIProviderError("all", "Failed to parse resume analysis JSON from AI provider")
@@ -562,7 +649,16 @@ async def analyze_job_match(resume_text: str, job_description: str) -> dict:
         parsed = _parse_json_response(result.text, expect_array=False)
         if not isinstance(parsed, dict):
             raise ValueError("Expected JSON object")
-        return parsed
+        return {
+            "rejectionProbability": _coerce_score(parsed.get("rejectionProbability", 0)),
+            "matchScore": _coerce_score(parsed.get("matchScore", 0)),
+            "topRejectionReasons": _coerce_str_list(parsed.get("topRejectionReasons")),
+            "gapReport": _coerce_dict_list(
+                parsed.get("gapReport"),
+                {"missingSkill": "", "importance": "Medium", "fixAction": ""},
+            ),
+            "killRatioVerdict": str(parsed.get("killRatioVerdict") or ""),
+        }
     except (json.JSONDecodeError, ValueError):
         logger.error(f"Failed to parse job match JSON. Raw text: {result.text[:200]}")
         raise AIProviderError("all", "Failed to perform job match analysis from AI provider")
@@ -586,7 +682,18 @@ Return ONLY the JSON object."""
         parsed = _parse_json_response(result.text, expect_array=False)
         if not isinstance(parsed, dict):
             raise ValueError("Expected JSON object")
-        return parsed
+        return {
+            "company": str(parsed.get("company") or clean_company),
+            "description": str(parsed.get("description") or ""),
+            "corePhilosophy": _coerce_dict_list(
+                parsed.get("corePhilosophy"),
+                {"title": "", "desc": "", "icon": "Brain"},
+            ),
+            "targetedScenarios": _coerce_dict_list(
+                parsed.get("targetedScenarios"),
+                {"title": "", "category": "Technical", "time": "45 mins", "desc": ""},
+            ),
+        }
     except (json.JSONDecodeError, ValueError):
         raise AIProviderError("all", "Failed to parse company prep JSON")
 

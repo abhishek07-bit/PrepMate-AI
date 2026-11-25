@@ -1,7 +1,8 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 
 export default function NotFoundPage() {
+  const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   return (
@@ -28,8 +29,9 @@ export default function NotFoundPage() {
             <span className="material-symbols-outlined text-[18px]">arrow_back</span>
             {isAuthenticated ? 'Return to Dashboard' : 'Return Home'}
           </Link>
-          <button 
-            onClick={() => window.history.back()}
+          <button
+            type="button"
+            onClick={() => (window.history.length > 1 ? navigate(-1) : navigate(isAuthenticated ? '/dashboard' : '/'))}
             className="bg-surface-container-high text-primary border border-outline-variant px-xl py-md rounded-pebble font-label-bold text-label-bold transition-all hover:bg-surface-container-highest flex items-center justify-center gap-sm"
           >
             <span className="material-symbols-outlined text-[18px]">undo</span>
