@@ -1,29 +1,19 @@
 import os
-import io
-from pypdf import PdfReader
+import uuid
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
 from app.db.database import get_db
 from app.models.models import Resume, User
 from app.auth.routes import get_current_user
 from app.core.config import settings
+from app.resume.parser import extract_docx_text, extract_pdf_text, extract_skills
 from app.services.ai_service import analyze_resume, analyze_job_match
-from pydantic import BaseModel
 
 router = APIRouter()
 
-# A simple list of skills to match against for extraction
-COMMON_SKILLS = [
-    "Python", "Java", "C++", "C#", "JavaScript", "TypeScript", "React", "Angular", "Vue",
-    "Node.js", "Express", "Django", "FastAPI", "Flask", "Spring Boot", "Ruby on Rails",
-    "SQL", "PostgreSQL", "MySQL", "MongoDB", "Redis", "Elasticsearch", "Cassandra",
-    "Docker", "Kubernetes", "AWS", "Azure", "GCP", "Terraform", "Jenkins", "Git",
-    "Machine Learning", "Deep Learning", "TensorFlow", "PyTorch", "NLP", "Computer Vision",
-    "System Design", "Microservices", "REST API", "GraphQL", "Agile", "Scrum",
-    "HTML", "CSS", "SASS", "Tailwind", "Next.js", "Nuxt.js", "Redux", "Zustand"
-]
 
 @router.post("/upload")
 async def upload_resume(
@@ -34,62 +24,50 @@ async def upload_resume(
     if file.size and file.size > settings.MAX_FILE_SIZE:
         raise HTTPException(status_code=400, detail="File too large. Max 5MB.")
 
-    if not file.filename or not file.filename.lower().endswith((".pdf", ".docx")):
+    safe_filename = os.path.basename(file.filename or "").strip()
+    ext = os.path.splitext(safe_filename)[1].lower()
+    if not safe_filename or ext not in (".pdf", ".docx"):
         raise HTTPException(status_code=400, detail="Only PDF and DOCX files are supported.")
 
-    # Save file
-    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-    file_path = os.path.join(settings.UPLOAD_DIR, f"{current_user.id}_{file.filename}")
     content = await file.read()
+    if len(content) > settings.MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File too large. Max 5MB.")
+
+    parsed_text_str = ""
+    if ext == ".pdf":
+        try:
+            parsed_text_str = await run_in_threadpool(extract_pdf_text, content)
+        except Exception:
+            raise HTTPException(status_code=422, detail="Failed to parse PDF document.")
+    elif ext == ".docx":
+        try:
+            parsed_text_str = await run_in_threadpool(extract_docx_text, content)
+        except Exception:
+            raise HTTPException(status_code=422, detail="Failed to parse DOCX document.")
+
+    if not parsed_text_str.strip():
+        raise HTTPException(
+            status_code=422,
+            detail="Could not extract readable text from file. Ensure it is not an image-only scan.",
+        )
+
+    # Save file safely using a UUID filename inside UPLOAD_DIR
+    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    disk_filename = f"{current_user.id}_{uuid.uuid4().hex}{ext}"
+    file_path = os.path.join(settings.UPLOAD_DIR, disk_filename)
     with open(file_path, "wb") as f:
         f.write(content)
 
-    extracted_skills = []
-    parsed_text_str = ""
-    
-    def extract_pdf_text(b_content):
-        text = ""
-        reader = PdfReader(io.BytesIO(b_content))
-        for page in reader.pages:
-            text += page.extract_text() + " "
-        return text
-
-    def extract_docx_text(b_content):
-        from docx import Document
-        doc = Document(io.BytesIO(b_content))
-        return " ".join([p.text for p in doc.paragraphs])
-
-    # Real PDF parsing — using run_in_threadpool instead of deprecated get_event_loop
-    if file.filename.lower().endswith(".pdf"):
-        try:
-            parsed_text_str = await run_in_threadpool(extract_pdf_text, content)
-        except Exception as e:
-            raise HTTPException(status_code=422, detail="Failed to parse PDF document.")
-            
-    # Real DOCX parsing
-    elif file.filename.lower().endswith(".docx"):
-        try:
-            parsed_text_str = await run_in_threadpool(extract_docx_text, content)
-        except Exception as e:
-            raise HTTPException(status_code=422, detail="Failed to parse DOCX document.")
-
-    if parsed_text_str:
-        text_lower = parsed_text_str.lower()
-        # Extract skills by matching against the common skills list
-        for skill in COMMON_SKILLS:
-            if skill.lower() in text_lower:
-                extracted_skills.append(skill)
-    # Deduplicate and sort
-    extracted_skills = sorted(list(set(extracted_skills)))
+    extracted_skills = extract_skills(parsed_text_str)
 
     resume = Resume(
         user_id=current_user.id,
-        file_name=file.filename,
+        file_name=safe_filename,
         file_path=file_path,
         file_size=len(content),
         skills=extracted_skills,
         experience=[],
-        parsed_text=parsed_text_str
+        parsed_text=parsed_text_str,
     )
     db.add(resume)
     db.commit()
@@ -99,8 +77,40 @@ async def upload_resume(
         "id": resume.id,
         "fileName": resume.file_name,
         "fileSize": f"{len(content) / 1024 / 1024:.1f} MB",
+        "fileSizeBytes": len(content),
         "skills": resume.skills,
         "uploadedAt": resume.uploaded_at.isoformat(),
+    }
+
+
+@router.get("/latest")
+def get_latest_resume(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    resume = (
+        db.query(Resume)
+        .filter(Resume.user_id == current_user.id)
+        .order_by(Resume.uploaded_at.desc())
+        .first()
+    )
+    if not resume:
+        return {"resume": None}
+
+    valid_analysis = (
+        resume.analysis
+        if isinstance(resume.analysis, dict) and not resume.analysis.get("error")
+        else None
+    )
+    return {
+        "resume": {
+            "id": resume.id,
+            "fileName": resume.file_name,
+            "fileSizeBytes": resume.file_size,
+            "skills": resume.skills or [],
+            "analysis": valid_analysis,
+            "uploadedAt": resume.uploaded_at.isoformat() if resume.uploaded_at else None,
+        }
     }
 
 
@@ -121,9 +131,9 @@ def get_skills(
     return {"skills": resume.skills, "fileName": resume.file_name}
 
 
-
 class MatchRequest(BaseModel):
     jobDescription: str
+
 
 @router.post("/analyze/{resume_id}")
 async def run_resume_analysis(
@@ -134,21 +144,20 @@ async def run_resume_analysis(
     resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == current_user.id).first()
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
-        
+
     if not resume.parsed_text:
         raise HTTPException(status_code=400, detail="Resume text could not be parsed previously")
-        
-    # Check if already analyzed to save AI credits
-    if resume.analysis:
+
+    # Return cached analysis only if it is valid (ignore historical error payloads)
+    if isinstance(resume.analysis, dict) and not resume.analysis.get("error"):
         return resume.analysis
-        
+
     analysis_result = await analyze_resume(resume.parsed_text)
-    
-    # Save back to DB
     resume.analysis = analysis_result
     db.commit()
-    
+
     return analysis_result
+
 
 @router.post("/match/{resume_id}")
 async def match_resume_to_job(
@@ -160,9 +169,36 @@ async def match_resume_to_job(
     resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == current_user.id).first()
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
-        
+
     if not resume.parsed_text:
         raise HTTPException(status_code=400, detail="Resume text could not be parsed previously")
-        
+
+    if not req.jobDescription.strip():
+        raise HTTPException(status_code=400, detail="Job description cannot be empty")
+
     match_result = await analyze_job_match(resume.parsed_text, req.jobDescription)
     return match_result
+
+
+@router.delete("/{resume_id}")
+def delete_resume(
+    resume_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == current_user.id).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+
+    if resume.file_path:
+        upload_root = os.path.abspath(settings.UPLOAD_DIR)
+        abs_path = os.path.abspath(resume.file_path)
+        if abs_path.startswith(upload_root + os.sep) and os.path.exists(abs_path):
+            try:
+                os.remove(abs_path)
+            except OSError:
+                pass
+
+    db.delete(resume)
+    db.commit()
+    return {"status": "deleted", "id": resume_id}

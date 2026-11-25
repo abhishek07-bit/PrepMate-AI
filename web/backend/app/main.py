@@ -1,41 +1,76 @@
+import json
 import os
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.core.config import settings
 from app.services import ai_service
 from app.services.ai_service import AIProviderError
-from app.auth.routes import router as auth_router
+from app.auth.routes import get_current_user, router as auth_router
 from app.resume.routes import router as resume_router
 from app.api.routes import router as interview_router
 from app.analytics.routes import router as analytics_router
 from app.db.database import init_db
+from app.models.models import User
+
+
+def _init_firebase():
+    """Initialize Firebase Admin SDK safely once."""
+    import firebase_admin
+    from firebase_admin import credentials
+
+    if firebase_admin._apps:
+        print("[PrepMate] Firebase Admin already initialized, skipping.")
+        return
+
+    service_account_path = "firebase-service-account.json"
+    service_account_env = os.getenv("FIREBASE_SERVICE_ACCOUNT")
+
+    if os.path.exists(service_account_path):
+        try:
+            cred = credentials.Certificate(service_account_path)
+            firebase_admin.initialize_app(cred)
+            print("[PrepMate] Firebase Admin initialized from file.")
+        except ValueError:
+            print("[PrepMate] Firebase Admin already initialized.")
+    elif service_account_env:
+        try:
+            service_account_info = json.loads(service_account_env)
+            cred = credentials.Certificate(service_account_info)
+            firebase_admin.initialize_app(cred)
+            print("[PrepMate] Firebase Admin initialized from environment variable.")
+        except ValueError:
+            print("[PrepMate] Firebase Admin already initialized.")
+        except Exception as e:
+            print(f"[PrepMate] Failed to initialize Firebase from environment variable: {e}")
+    else:
+        print("[PrepMate] Firebase Service Account not found. Firebase auth disabled.")
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    init_db()
+    _init_firebase()
+    yield
+
 
 app = FastAPI(
     title="PrepMate AI API",
     description="Adaptive Interview Preparation Platform API",
     version="1.0.0",
+    lifespan=lifespan,
 )
-
-# CORS Middleware
-# Restrict to explicitly allowed origins from environment
-# Strip whitespace to prevent misconfiguration from env vars
-allowed_origins = [
-    origin.strip()
-    for origin in os.getenv(
-        "ALLOWED_ORIGINS",
-        "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
-    ).split(",")
-    if origin.strip()
-]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=settings.ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Accept"],
 )
+
 
 @app.exception_handler(AIProviderError)
 async def ai_provider_exception_handler(request, exc: AIProviderError):
@@ -43,6 +78,7 @@ async def ai_provider_exception_handler(request, exc: AIProviderError):
         status_code=503,
         content={"message": "AI Service Unavailable", "detail": str(exc)},
     )
+
 
 @app.get("/")
 async def root():
@@ -56,7 +92,28 @@ async def health_check():
 
 @app.get("/api/ai/status")
 async def ai_provider_status():
-    """Check status of all AI providers in the fallback stack."""
+    """Return passive AI provider configuration status without burning external API quota."""
+    key_map = {
+        "gemini": bool(settings.GEMINI_API_KEY),
+        "groq": bool(settings.GROQ_API_KEY),
+        "openrouter": bool(settings.OPENROUTER_API_KEY),
+        "cerebras": bool(settings.CEREBRAS_API_KEY),
+    }
+    providers = {
+        name: {"status": "configured" if configured else "skipped"}
+        for name, configured in key_map.items()
+    }
+    configured_count = sum(1 for v in key_map.values() if v)
+    return {
+        "stack_order": ["gemini", "groq", "openrouter", "cerebras"],
+        "working_count": configured_count,
+        "providers": providers,
+    }
+
+
+@app.get("/api/ai/status/probe")
+async def ai_provider_probe(_current_user: User = Depends(get_current_user)):
+    """Authenticated live health check for all AI providers in the fallback stack."""
     results = await ai_service.check_providers()
     working = [name for name, info in results.items() if info["status"] == "ok"]
     return {
@@ -71,40 +128,3 @@ app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(resume_router, prefix="/api/resume", tags=["Resume"])
 app.include_router(interview_router, prefix="/api/interview", tags=["Interview"])
 app.include_router(analytics_router, prefix="/api/analytics", tags=["Analytics"])
-
-
-@app.on_event("startup")
-async def startup():
-    import firebase_admin
-    from firebase_admin import credentials
-
-    # Init Database
-    init_db()
-
-    # Init Firebase — guard against double-initialization on app restarts
-    if firebase_admin._apps:
-        print("[PrepMate] Firebase Admin already initialized, skipping.")
-    else:
-        service_account_path = "firebase-service-account.json"
-        service_account_env = os.getenv("FIREBASE_SERVICE_ACCOUNT")
-
-        if os.path.exists(service_account_path):
-            try:
-                cred = credentials.Certificate(service_account_path)
-                firebase_admin.initialize_app(cred)
-                print("[PrepMate] Firebase Admin initialized from file.")
-            except ValueError:
-                print("[PrepMate] Firebase Admin already initialized.")
-        elif service_account_env:
-            import json
-            try:
-                service_account_info = json.loads(service_account_env)
-                cred = credentials.Certificate(service_account_info)
-                firebase_admin.initialize_app(cred)
-                print("[PrepMate] Firebase Admin initialized from environment variable.")
-            except ValueError:
-                print("[PrepMate] Firebase Admin already initialized.")
-            except Exception as e:
-                print(f"[PrepMate] Failed to initialize Firebase from environment variable: {e}")
-        else:
-            print("[PrepMate] Firebase Service Account not found. Firebase auth disabled.")

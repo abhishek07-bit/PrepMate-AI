@@ -127,8 +127,8 @@ export default function FeedbackPage() {
             <div className="relative w-40 h-40 flex items-center justify-center shrink-0">
               <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
                 <circle className="text-outline-variant" cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="2" />
-                <circle 
-                  className="text-primary transition-all duration-1500 ease-out" 
+                <circle
+                  className="text-primary transition-all duration-1000 ease-out"
                   cx="18" cy="18" r="16" fill="none" stroke="currentColor" strokeWidth="2"
                   strokeDasharray={`${feedback.overallScore}, 100`}
                   strokeLinecap="round"
@@ -227,18 +227,31 @@ export default function FeedbackPage() {
               <h3 className="font-headline-md text-headline-sm">What to Do Next</h3>
             </div>
             <div className="flex flex-col gap-sm">
-              {feedback.recommendedActions?.map((action, i) => (
-                <a
-                  key={i}
-                  href={action.link}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="bg-surface-container-lowest border border-outline-variant p-md rounded-pebble flex items-center justify-between transition-all hover:border-primary group"
-                >
-                  <span className="font-label-bold text-sm text-primary">{action.title}</span>
-                  <span className="material-symbols-outlined text-[18px] text-secondary group-hover:text-primary transition-transform group-hover:translate-x-1">arrow_forward</span>
-                </a>
-              ))}
+              {feedback.recommendedActions?.map((action, i) => {
+                const isExternal = /^https?:\/\//i.test(action.link || '');
+                const targetPath = !action.link || action.link === '#' ? '/interview/setup' : action.link;
+                return isExternal ? (
+                  <a
+                    key={i}
+                    href={action.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="bg-surface-container-lowest border border-outline-variant p-md rounded-pebble flex items-center justify-between transition-all hover:border-primary group"
+                  >
+                    <span className="font-label-bold text-sm text-primary">{action.title}</span>
+                    <span className="material-symbols-outlined text-[18px] text-secondary group-hover:text-primary transition-transform group-hover:translate-x-1">arrow_forward</span>
+                  </a>
+                ) : (
+                  <Link
+                    key={i}
+                    to={targetPath}
+                    className="bg-surface-container-lowest border border-outline-variant p-md rounded-pebble flex items-center justify-between transition-all hover:border-primary group"
+                  >
+                    <span className="font-label-bold text-sm text-primary">{action.title}</span>
+                    <span className="material-symbols-outlined text-[18px] text-secondary group-hover:text-primary transition-transform group-hover:translate-x-1">arrow_forward</span>
+                  </Link>
+                );
+              })}
             </div>
           </article>
 

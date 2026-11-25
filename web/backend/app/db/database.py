@@ -1,8 +1,7 @@
 import re
 from urllib.parse import quote, unquote
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
 from app.core.config import settings
 
 
@@ -16,7 +15,10 @@ def _sanitize_db_url(url: str) -> str:
         url = url.replace("postgres://", "postgresql://", 1)
 
     # Sanitize password with unencoded special characters and strip accidental leading '@' in host
-    match = re.match(r"^(?P<prefix>[a-zA-Z0-9+]+://)(?P<credentials>.+)@+(?P<host>[a-zA-Z0-9.-]+)(?P<rest>.*)$", url)
+    match = re.match(
+        r"^(?P<prefix>[a-zA-Z0-9+]+://)(?P<credentials>.+)@+(?P<host>\[[0-9a-fA-F:]+\]|[a-zA-Z0-9.-]+)(?P<rest>.*)$",
+        url,
+    )
     if match:
         prefix = match.group("prefix")
         creds = match.group("credentials")

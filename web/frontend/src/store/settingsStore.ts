@@ -34,7 +34,7 @@ export const useSettingsStore = create<SettingsState>()(
       difficulty: 'intermediate',
       targetRoles: [],
       strictTiming: true,
-      audioFeedback: false,
+      audioFeedback: true,
       theme: 'system',
       setDifficulty: (difficulty) => set({ difficulty }),
       addRole: (role) =>

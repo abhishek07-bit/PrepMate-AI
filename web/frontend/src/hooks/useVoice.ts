@@ -5,15 +5,16 @@ interface UseVoiceOptions {
   pitch?: number;
   volume?: number;
   voiceName?: string;
+  initialEnabled?: boolean;
 }
 
 const isSynthesisSupported =
   typeof window !== 'undefined' && 'speechSynthesis' in window;
 
 export function useVoice(options: UseVoiceOptions = {}) {
-  const { rate = 1.0, pitch = 1.0, volume = 0.9, voiceName } = options;
+  const { rate = 1.0, pitch = 1.0, volume = 0.9, voiceName, initialEnabled = true } = options;
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isEnabled, setIsEnabled] = useState(true);
+  const [isEnabled, setIsEnabled] = useState(initialEnabled);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 

@@ -27,9 +27,10 @@ export default function DashboardPage() {
   }, [fetchSessions]);
 
   const firstName = user?.firstName || 'there';
-  const totalSessions = sessions.length;
+  const completedSessions = sessions.filter((s) => typeof s.score === 'number');
+  const totalSessions = completedSessions.length;
   const avgScore = totalSessions > 0
-    ? Math.round(sessions.reduce((sum, s) => sum + (s.score || 0), 0) / totalSessions)
+    ? Math.round(completedSessions.reduce((sum, s) => sum + (s.score || 0), 0) / totalSessions)
     : 0;
 
   return (
@@ -57,7 +58,7 @@ export default function DashboardPage() {
       <div className="flex flex-col gap-sm md:gap-md">
         
         {/* Readiness Score Pebble */}
-        <motion.article variants={itemVariants} className="bg-surface-container-low border border-outline-variant rounded-pebble p-lg md:p-lg md:p-xl lg:p-container-padding flex flex-col gap-md md:gap-lg group hover:border-primary transition-colors min-h-[220px] md:min-h-[280px]">
+        <motion.article variants={itemVariants} className="bg-surface-container-low border border-outline-variant rounded-pebble p-lg md:p-xl lg:p-container-padding flex flex-col gap-md md:gap-lg group hover:border-primary transition-colors min-h-[220px] md:min-h-[280px]">
           <div className="flex justify-between items-start">
             <h2 className="font-headline-sm md:text-headline-md text-primary">Your Overall Score</h2>
             <span className="material-symbols-outlined text-[20px] md:text-[24px] text-secondary group-hover:text-primary transition-colors">trending_up</span>
@@ -74,7 +75,7 @@ export default function DashboardPage() {
         {/* Action Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-sm md:gap-md">
           <motion.div variants={itemVariants}>
-            <Link to="/interview/setup" className="h-full bg-primary text-on-primary rounded-pebble p-lg md:p-lg md:p-xl lg:p-container-padding flex flex-col gap-md md:gap-lg group active:scale-[0.98] transition-transform">
+            <Link to="/interview/setup" className="h-full bg-primary text-on-primary rounded-pebble p-lg md:p-xl lg:p-container-padding flex flex-col gap-md md:gap-lg group active:scale-[0.98] transition-transform">
               <div className="flex justify-between items-start">
                 <div className="flex flex-col gap-xs">
                   <span className="font-label-bold text-label-sm text-on-primary/60 uppercase tracking-widest">Quick Start</span>
@@ -83,15 +84,15 @@ export default function DashboardPage() {
                 <span className="material-symbols-outlined text-[20px] md:text-[24px] opacity-60">track_changes</span>
               </div>
               <p className="font-body-sm md:text-body-md opacity-80 flex-grow">Start a new practice session with realistic interview questions tailored to your target role and company.</p>
-              <button className="mt-sm w-full bg-surface-container-lowest text-primary font-label-bold text-label-bold py-sm md:py-md px-lg rounded-pebble flex items-center justify-center gap-sm transition-all group-hover:shadow-lg">
+              <span className="mt-sm w-full bg-surface-container-lowest text-primary font-label-bold text-label-bold py-sm md:py-md px-lg rounded-pebble flex items-center justify-center gap-sm transition-all group-hover:shadow-lg">
                 <span>Start Practice</span>
                 <span className="material-symbols-outlined text-[16px] md:text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
-              </button>
+              </span>
             </Link>
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <Link to="/resume" className="h-full bg-surface-container-low border border-outline-variant rounded-pebble p-lg md:p-lg md:p-xl lg:p-container-padding flex flex-col gap-md md:gap-lg group hover:border-primary transition-all active:scale-[0.98]">
+            <Link to="/resume" className="h-full bg-surface-container-low border border-outline-variant rounded-pebble p-lg md:p-xl lg:p-container-padding flex flex-col gap-md md:gap-lg group hover:border-primary transition-all active:scale-[0.98]">
               <div className="flex justify-between items-start">
                 <div className="flex flex-col gap-xs">
                   <span className="font-label-bold text-label-sm text-secondary uppercase tracking-widest">Tools</span>
@@ -100,10 +101,10 @@ export default function DashboardPage() {
                 <span className="material-symbols-outlined text-[20px] md:text-[24px] text-secondary group-hover:text-primary transition-colors">history</span>
               </div>
               <p className="font-body-sm md:text-body-md text-secondary flex-grow">Upload your resume to get detailed feedback on how to improve it for your job applications.</p>
-              <button className="mt-sm w-full bg-surface-container-lowest text-primary font-label-bold text-label-bold py-sm md:py-md px-lg rounded-pebble flex items-center justify-center gap-sm border border-outline-variant transition-all group-hover:bg-primary group-hover:text-on-primary">
+              <span className="mt-sm w-full bg-surface-container-lowest text-primary font-label-bold text-label-bold py-sm md:py-md px-lg rounded-pebble flex items-center justify-center gap-sm border border-outline-variant transition-all group-hover:bg-primary group-hover:text-on-primary">
                 <span>Upload Resume</span>
                 <span className="material-symbols-outlined text-[16px] md:text-[18px] group-hover:translate-x-1 transition-transform">chevron_right</span>
-              </button>
+              </span>
             </Link>
           </motion.div>
         </div>
@@ -125,13 +126,13 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-sm md:gap-md">
-              {sessions.slice(0, 3).map((session) => (
+              {completedSessions.slice(0, 3).map((session) => (
                 <Link key={session.id} to={`/feedback/${session.id}`} className="bg-surface-container-low border border-outline-variant rounded-pebble p-md md:p-lg hover:border-primary transition-all active:scale-[0.98]">
                   <div className="flex justify-between items-start mb-sm md:mb-lg">
                     <div className="p-2 rounded-pebble bg-surface-container-lowest border border-outline-variant text-primary">
                       <span className="material-symbols-outlined text-[12px] text-success">verified_user</span>
                     </div>
-                    <span className="font-display text-[24px] md:text-[28px] tracking-tighter font-bold text-primary leading-none">{session.score}%</span>
+                    <span className="font-display text-[24px] md:text-[28px] tracking-tighter font-bold text-primary leading-none">{session.score ?? 0}%</span>
                   </div>
                   <h4 className="font-label-bold text-label-sm md:text-sm text-primary mb-1 truncate">{session.role}</h4>
                   <p className="font-label-bold text-[9px] md:text-[10px] text-secondary uppercase tracking-widest truncate">{session.company}</p>

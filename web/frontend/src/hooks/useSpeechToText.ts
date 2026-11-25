@@ -14,6 +14,7 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const recognitionRef = useRef<any>(null);
+  const isListeningRef = useRef(false);
   const onResultRef = useRef(options.onResult);
 
   // Keep the callback ref in sync without re-creating the recognition instance
@@ -37,17 +38,22 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
 
     let shouldRestart = false;
 
-    recognition.onstart = () => setIsListening(true);
+    recognition.onstart = () => {
+      isListeningRef.current = true;
+      setIsListening(true);
+    };
     recognition.onend = () => {
       // On iOS (non-continuous mode), auto-restart if user hasn't explicitly stopped
       if (shouldRestart && isIOS) {
         try {
           recognition.start();
         } catch {
+          isListeningRef.current = false;
           setIsListening(false);
         }
         return;
       }
+      isListeningRef.current = false;
       setIsListening(false);
     };
     recognition.onerror = (event: any) => {
@@ -55,6 +61,7 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
       if (event.error === 'no-speech') return;
       console.error('Speech recognition error:', event.error);
       shouldRestart = false;
+      isListeningRef.current = false;
       setIsListening(false);
     };
 
@@ -72,8 +79,8 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
 
       const fullTranscript = finalTranscript || interimTranscript;
       setTranscript(fullTranscript);
-      if (onResultRef.current && event.results[event.results.length - 1].isFinal) {
-        onResultRef.current(event.results[event.results.length - 1][0].transcript);
+      if (onResultRef.current && finalTranscript.trim()) {
+        onResultRef.current(finalTranscript.trim());
       }
     };
 
@@ -84,6 +91,7 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
     // Cleanup: stop recognition on unmount
     return () => {
       shouldRestart = false;
+      isListeningRef.current = false;
       try {
         recognition.stop();
       } catch {
@@ -93,9 +101,8 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
   }, [lang]);
 
   const startListening = useCallback(() => {
-    if (recognitionRef.current && !isListening) {
+    if (recognitionRef.current && !isListeningRef.current) {
       setTranscript('');
-      // Enable iOS auto-restart
       (recognitionRef.current as any).__shouldRestart?.(true);
       try {
         recognitionRef.current.start();
@@ -103,13 +110,12 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
         // Already started
       }
     }
-  }, [isListening]);
+  }, []);
 
   const stopListening = useCallback(() => {
     if (recognitionRef.current) {
-      // Disable iOS auto-restart before stopping
       (recognitionRef.current as any).__shouldRestart?.(false);
-      if (isListening) {
+      if (isListeningRef.current) {
         try {
           recognitionRef.current.stop();
         } catch {
@@ -117,7 +123,7 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
         }
       }
     }
-  }, [isListening]);
+  }, []);
 
   const resetTranscript = useCallback(() => {
     setTranscript('');

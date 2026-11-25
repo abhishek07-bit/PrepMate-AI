@@ -1,25 +1,53 @@
 import { useState, useRef, useEffect } from 'react';
 import { resumeAPI } from '../../api/client';
 import { useResumeStore } from '../../store/resumeStore';
+import { useSettingsStore } from '../../store/settingsStore';
+import { useUIStore } from '../../store/uiStore';
 
 const isSynthesisSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+const isValidHttpUrl = (value?: string) => Boolean(value && /^https?:\/\//i.test(value.trim()));
 
 export default function ResumeUploadPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { 
+  const {
     id, file, analysis, matchAnalysis, isUploading, isAnalyzing, isMatching,
-    setResumeId, setFile, setParsedData, setAnalysis, setMatchAnalysis, setUploading, setAnalyzing, setMatching, clearResume 
+    setResumeId, setFile, setParsedData, setAnalysis, setMatchAnalysis, setUploading, setAnalyzing, setMatching, clearResume
   } = useResumeStore();
-  
+  const audioFeedback = useSettingsStore((s) => s.audioFeedback);
+  const addToast = useUIStore((s) => s.addToast);
+
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [jobDescription, setJobDescription] = useState('');
   const [analyzingStep, setAnalyzingStep] = useState<string | null>(null);
 
+  // Rehydrate latest resume from backend if local state lacks resume ID
+  useEffect(() => {
+    if (id) return;
+    let active = true;
+    resumeAPI.getLatest()
+      .then(({ data }) => {
+        if (!active || !data?.resume) return;
+        const latest = data.resume;
+        setResumeId(latest.id);
+        setFile({ name: latest.fileName, size: latest.fileSizeBytes || 0 });
+        setParsedData({ skills: latest.skills || [], experience: [] });
+        if (latest.analysis && !latest.analysis.error) {
+          setAnalysis(latest.analysis);
+        }
+      })
+      .catch(() => {
+        // Ignore unauthenticated or empty initial fetch
+      });
+    return () => {
+      active = false;
+    };
+  }, [id, setResumeId, setFile, setParsedData, setAnalysis]);
+
   // Web Speech API for TTS
   useEffect(() => {
-    if (isSynthesisSupported && analysis?.voiceSummary) {
+    if (isSynthesisSupported && audioFeedback && analysis?.voiceSummary) {
       speakSummary(analysis.voiceSummary);
     }
     return () => {
@@ -31,7 +59,7 @@ export default function ResumeUploadPage() {
         }
       }
     };
-  }, [analysis]);
+  }, [analysis, audioFeedback]);
 
   const speakSummary = (text: string) => {
     if (!isSynthesisSupported) return;
@@ -103,9 +131,12 @@ export default function ResumeUploadPage() {
         skills: data.skills || [],
         experience: [],
       });
+      addToast('Resume uploaded successfully.', 'success');
     } catch (err: any) {
       console.error('Upload failed:', err);
-      setError(err.response?.data?.detail || 'Upload failed. Please try again.');
+      const msg = err.response?.data?.detail || 'Upload failed. Please try again.';
+      setError(msg);
+      addToast(msg, 'error');
       clearResume();
     } finally {
       setUploading(false);
@@ -117,10 +148,10 @@ export default function ResumeUploadPage() {
     setAnalyzing(true);
     setError(null);
     setAnalyzingStep('Extracting structure...');
-    
+
     const stepInterval = setInterval(() => {
-      setAnalyzingStep(prev => 
-        prev === 'Extracting structure...' ? 'ATS Audit...' : 
+      setAnalyzingStep(prev =>
+        prev === 'Extracting structure...' ? 'ATS Audit...' :
         prev === 'ATS Audit...' ? 'Evaluating Impact...' :
         'Finalizing Report...'
       );
@@ -128,14 +159,18 @@ export default function ResumeUploadPage() {
 
     try {
       const { data } = await resumeAPI.analyze(id);
-      clearInterval(stepInterval);
-      setAnalyzingStep(null);
+      if (data?.error) {
+        throw new Error(data.error);
+      }
       setAnalysis(data);
+      addToast('Resume audit complete.', 'neural');
     } catch (err: any) {
+      const msg = err.response?.data?.detail || err.message || 'Analysis failed.';
+      setError(msg);
+      addToast(msg, 'error');
+    } finally {
       clearInterval(stepInterval);
       setAnalyzingStep(null);
-      setError(err.response?.data?.detail || 'Analysis failed.');
-    } finally {
       setAnalyzing(false);
     }
   };
@@ -146,9 +181,15 @@ export default function ResumeUploadPage() {
     setError(null);
     try {
       const { data } = await resumeAPI.match(id, jobDescription);
+      if (data?.error) {
+        throw new Error(data.error);
+      }
       setMatchAnalysis(data);
+      addToast('Job match analysis ready.', 'neural');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Matching failed.');
+      const msg = err.response?.data?.detail || err.message || 'Matching failed.';
+      setError(msg);
+      addToast(msg, 'error');
     } finally {
       setMatching(false);
     }
@@ -166,7 +207,8 @@ export default function ResumeUploadPage() {
     if (selected) handleFileSelect(selected);
   };
 
-  const handleRemove = () => {
+  const handleRemove = async () => {
+    const resumeId = id;
     clearResume();
     setError(null);
     if (isSynthesisSupported) {
@@ -178,6 +220,9 @@ export default function ResumeUploadPage() {
     }
     setIsSpeaking(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    if (resumeId) {
+      resumeAPI.delete(resumeId).catch(() => {});
+    }
   };
 
   const getScoreColor = (score: number) => {
@@ -337,21 +382,53 @@ export default function ResumeUploadPage() {
                 ))}
               </div>
 
-              {/* Kill-Ratio Verdict */}
+              {/* Kill-Ratio Verdict & Match Breakdown */}
               {matchAnalysis && (
-                <article className="bg-surface-container-low border border-primary/20 rounded-pebble p-lg md:p-xl lg:p-container-padding flex flex-col md:flex-row items-center gap-lg animate-scale-in">
-                  <div className="flex-1 flex flex-col gap-xs text-center md:text-left">
-                    <div className="flex items-center justify-center md:justify-start gap-md text-error font-bold text-[10px] uppercase tracking-widest">
-                      <span className="material-symbols-outlined text-[14px]">warning</span> Match Assessment
+                <article className="bg-surface-container-low border border-primary/20 rounded-pebble p-lg md:p-xl lg:p-container-padding flex flex-col gap-lg animate-scale-in">
+                  <div className="flex flex-col md:flex-row items-center gap-lg">
+                    <div className="flex-1 flex flex-col gap-xs text-center md:text-left">
+                      <div className="flex items-center justify-center md:justify-start gap-md text-error font-bold text-[10px] uppercase tracking-widest">
+                        <span className="material-symbols-outlined text-[14px]">warning</span> Match Assessment • Match Score {matchAnalysis.matchScore ?? 0}%
+                      </div>
+                      <h3 className="font-display text-2xl font-bold text-primary italic">"{matchAnalysis.killRatioVerdict}"</h3>
                     </div>
-                    <h3 className="font-display text-2xl font-bold text-primary italic">"{matchAnalysis.killRatioVerdict}"</h3>
-                  </div>
-                  <div className="shrink-0 text-center flex flex-col gap-xs">
-                    <div className={`font-display text-5xl font-bold leading-none ${matchAnalysis.rejectionProbability >= 70 ? 'text-error' : 'text-primary'}`}>
-                      {matchAnalysis.rejectionProbability}%
+                    <div className="shrink-0 text-center flex flex-col gap-xs">
+                      <div className={`font-display text-5xl font-bold leading-none ${matchAnalysis.rejectionProbability >= 70 ? 'text-error' : 'text-primary'}`}>
+                        {matchAnalysis.rejectionProbability}%
+                      </div>
+                      <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">Rejection Risk</span>
                     </div>
-                    <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">Rejection Risk</span>
                   </div>
+
+                  {matchAnalysis.topRejectionReasons?.length > 0 && (
+                    <div className="border-t border-outline-variant pt-md flex flex-col gap-sm">
+                      <h4 className="font-label-bold text-[10px] text-error uppercase tracking-widest">Top Rejection Risks</h4>
+                      <ul className="flex flex-col gap-xs">
+                        {matchAnalysis.topRejectionReasons.map((reason, idx) => (
+                          <li key={idx} className="text-body-sm text-primary flex gap-sm">
+                            <span className="text-error font-bold">•</span> {reason}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {matchAnalysis.gapReport?.length > 0 && (
+                    <div className="border-t border-outline-variant pt-md flex flex-col gap-sm">
+                      <h4 className="font-label-bold text-[10px] text-secondary uppercase tracking-widest">Skill Gap Fixes</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-sm">
+                        {matchAnalysis.gapReport.map((gap, idx) => (
+                          <div key={idx} className="bg-surface border border-outline-variant rounded-pebble p-md flex flex-col gap-xs">
+                            <div className="flex items-center justify-between gap-sm">
+                              <span className="font-label-bold text-xs text-primary">{gap.missingSkill}</span>
+                              <span className="text-[9px] font-bold uppercase tracking-widest text-error">{gap.importance}</span>
+                            </div>
+                            <p className="text-body-sm text-secondary">{gap.fixAction}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </article>
               )}
 
@@ -362,7 +439,7 @@ export default function ResumeUploadPage() {
                     <span className="material-symbols-outlined text-[14px]">warning</span> Weaknesses
                   </h4>
                   <ul className="flex flex-col gap-md">
-                    {analysis.weaknesses.map((w, i) => (
+                    {(analysis.weaknesses || []).map((w, i) => (
                       <li key={i} className="flex gap-md text-body-sm text-primary">
                         <span className="text-error font-bold">•</span> {w}
                       </li>
@@ -374,7 +451,7 @@ export default function ResumeUploadPage() {
                     <span className="material-symbols-outlined text-[14px]">check_circle</span> Strengths
                   </h4>
                   <ul className="flex flex-col gap-md">
-                    {analysis.strengths.map((s, i) => (
+                    {(analysis.strengths || []).map((s, i) => (
                       <li key={i} className="flex gap-md text-body-sm text-primary">
                         <span className="text-success font-bold">•</span> {s}
                       </li>
@@ -383,14 +460,50 @@ export default function ResumeUploadPage() {
                 </article>
               </div>
 
+              {/* Critical Fixes & Recommended Roles */}
+              {(analysis.criticalFixes?.length > 0 || analysis.recommendedRoles?.length > 0) && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
+                  {analysis.criticalFixes?.length > 0 && (
+                    <article className="bg-surface-container-low border border-outline-variant rounded-pebble p-lg md:p-xl flex flex-col gap-md">
+                      <h4 className="font-label-bold text-label-sm text-primary uppercase tracking-widest">Critical Fixes</h4>
+                      <ul className="flex flex-col gap-sm">
+                        {analysis.criticalFixes.map((fix, idx) => (
+                          <li key={idx} className="flex gap-sm text-body-sm text-secondary">
+                            <span className="text-primary font-bold">{idx + 1}.</span> {fix}
+                          </li>
+                        ))}
+                      </ul>
+                    </article>
+                  )}
+                  {analysis.recommendedRoles?.length > 0 && (
+                    <article className="bg-surface-container-low border border-outline-variant rounded-pebble p-lg md:p-xl flex flex-col gap-md">
+                      <h4 className="font-label-bold text-label-sm text-primary uppercase tracking-widest">Recommended Roles</h4>
+                      <div className="flex flex-wrap gap-sm">
+                        {analysis.recommendedRoles.map((role, idx) => (
+                          <span key={idx} className="px-md py-xs rounded-full bg-surface border border-outline-variant text-xs font-label-bold text-primary">
+                            {role}
+                          </span>
+                        ))}
+                      </div>
+                      {analysis.metricsDetected?.length > 0 && (
+                        <div className="pt-sm border-t border-outline-variant flex flex-col gap-xs">
+                          <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">Metrics Found</span>
+                          <p className="text-body-sm text-secondary">{analysis.metricsDetected.slice(0, 4).join(' • ')}</p>
+                        </div>
+                      )}
+                    </article>
+                  )}
+                </div>
+              )}
+
               {/* Assessment */}
               <article className="bg-surface-container-low border border-outline-variant rounded-pebble p-lg md:p-xl lg:p-container-padding flex flex-col gap-lg">
                 <div className="flex justify-between items-center border-b border-outline-variant pb-md">
                   <h4 className="font-headline-sm text-headline-sm text-primary flex items-center gap-md">
                     <span className="material-symbols-outlined text-[20px]">auto_awesome</span> Overall Feedback
                   </h4>
-                  <button 
-                    onClick={toggleSpeech} 
+                  <button
+                    onClick={toggleSpeech}
                     className={`w-10 h-10 rounded-pebble flex items-center justify-center transition-all ${isSpeaking ? 'bg-primary text-on-primary' : 'bg-surface border border-outline-variant text-secondary'}`}
                   >
                     {isSpeaking ? <span className="material-symbols-outlined text-[18px]">volume_off</span> : <span className="material-symbols-outlined text-[18px]">volume_up</span>}
@@ -416,23 +529,29 @@ export default function ResumeUploadPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {analysis.projects.map((p, i) => (
+                      {(analysis.projects || []).map((p, i) => (
                         <tr key={i} className="border-b border-outline-variant">
-                          <td className="py-md pr-md font-label-bold text-sm text-primary">{p.name}</td>
+                          <td className="py-md pr-md">
+                            <p className="font-label-bold text-sm text-primary">{p.name}</p>
+                            {p.impact && <p className="text-xs text-secondary mt-xs">{p.impact}</p>}
+                          </td>
                           <td className="py-md pr-md">
                             <span className="text-[9px] font-bold text-secondary">{p.stack}</span>
                           </td>
                           <td className="py-md">
                             <div className="flex gap-xs">
-                              {p.github && (
+                              {isValidHttpUrl(p.github) && (
                                 <a href={p.github} target="_blank" rel="noreferrer" className="text-secondary hover:text-primary text-[10px] font-bold uppercase tracking-widest">
                                   GitHub
                                 </a>
                               )}
-                              {p.live && (
+                              {isValidHttpUrl(p.live) && (
                                 <a href={p.live} target="_blank" rel="noreferrer" className="text-secondary hover:text-primary text-[10px] font-bold uppercase tracking-widest">
                                   Live
                                 </a>
+                              )}
+                              {!isValidHttpUrl(p.github) && !isValidHttpUrl(p.live) && (
+                                <span className="text-[10px] text-secondary opacity-50">—</span>
                               )}
                             </div>
                           </td>

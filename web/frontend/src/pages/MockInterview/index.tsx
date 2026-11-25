@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion, Variants } from 'framer-motion';
 import ProgressBar from '../../components/common/ProgressBar';
 import { useInterviewStore } from '../../store/interviewStore';
+import { useSettingsStore } from '../../store/settingsStore';
+import { useUIStore } from '../../store/uiStore';
 import { interviewAPI } from '../../api/client';
 import { useVoice } from '../../hooks/useVoice';
 import { useSpeechToText } from '../../hooks/useSpeechToText';
@@ -26,16 +28,23 @@ const itemVariants: Variants = {
 
 export default function MockInterviewPage() {
   const navigate = useNavigate();
-  const { 
-    sessionId, 
-    questions, 
-    currentQuestionIndex, 
-    nextQuestion, 
+  const {
+    sessionId,
+    questions,
+    currentQuestionIndex,
+    nextQuestion,
     addAnswer,
-    endSession 
+    endSession
   } = useInterviewStore();
 
-  const { speak, stop, isSpeaking, isEnabled, toggle } = useVoice({ rate: 0.95, pitch: 1.0 });
+  const { strictTiming, audioFeedback } = useSettingsStore();
+  const addToast = useUIStore((s) => s.addToast);
+
+  const { speak, stop, isSpeaking, isEnabled, toggle } = useVoice({
+    rate: 0.95,
+    pitch: 1.0,
+    initialEnabled: audioFeedback,
+  });
 
   const { 
     isListening, 
@@ -157,13 +166,14 @@ export default function MockInterviewPage() {
       if (isEnabled && fb.feedback) {
         speak(`Rating: ${fb.score}. ${fb.feedback}`);
       }
-    } catch (error) {
-      console.error('Failed to submit answer:', error);
+    } catch (err: any) {
+      console.error('Failed to submit answer:', err);
+      addToast(err?.response?.data?.detail || 'Failed to evaluate answer. Please try submitting again.', 'error');
       setPhase('question');
     } finally {
       setLoading(false);
     }
-  }, [currentQuestion, answerText, confidence, timer, addAnswer, stop, isEnabled, speak, stopListening]);
+  }, [currentQuestion, answerText, confidence, timer, addAnswer, stop, isEnabled, speak, stopListening, addToast]);
 
   const handleMicToggle = () => {
     if (isListening) {
@@ -176,13 +186,13 @@ export default function MockInterviewPage() {
   if (!currentQuestion) return null;
 
   return (
-    <motion.div 
+    <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="flex-1 flex flex-col max-w-max-width mx-auto w-full px-lg md:px-xl pt-[96px] pb-lg min-h-screen min-h-[100dvh] overflow-hidden"
+      className="flex-1 flex flex-col max-w-max-width mx-auto w-full px-lg md:px-xl pt-[96px] pb-lg min-h-[100dvh] overflow-hidden"
     >
-      
+
       {/* HUD */}
       <motion.header variants={itemVariants} className="flex flex-col gap-xs">
         <div className="flex items-center justify-between flex-wrap gap-sm">
@@ -194,6 +204,16 @@ export default function MockInterviewPage() {
             <div className="absolute -bottom-1 left-0 w-8 h-[1px] bg-gradient-to-r from-primary to-transparent opacity-40" />
           </div>
           <div className="flex items-center gap-md">
+            <span
+              className={`font-label-bold text-[11px] uppercase tracking-widest px-md py-xs rounded-pebble border ${
+                strictTiming && currentQuestion.timeLimit && timer > currentQuestion.timeLimit
+                  ? 'border-error text-error bg-error/10'
+                  : 'border-outline-variant text-secondary bg-surface'
+              }`}
+            >
+              {formatTime(timer)}
+              {strictTiming && currentQuestion.timeLimit ? ` / ${formatTime(currentQuestion.timeLimit)}` : ''}
+            </span>
             <button
               onClick={toggle}
               className={`flex items-center gap-sm px-md py-sm rounded-pebble border transition-all ${

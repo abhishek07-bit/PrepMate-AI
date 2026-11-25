@@ -231,7 +231,17 @@ export default function CompanyPrepPage() {
                       <p className="text-body-sm text-secondary leading-relaxed italic">"{question.desc}"</p>
                     </div>
                   </div>
-                  <button className="w-full md:w-14 h-10 md:h-14 rounded-pebble bg-surface-container-lowest border border-outline-variant flex items-center justify-center text-secondary transition-all group-hover:bg-primary group-hover:text-on-primary group-hover:border-primary group-hover:shadow-lg">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(
+                        `/interview/setup?company=${encodeURIComponent(data.company)}&role=${encodeURIComponent(question.title)}`
+                      )
+                    }
+                    title={`Practice ${question.title}`}
+                    aria-label={`Practice ${question.title}`}
+                    className="w-full md:w-14 h-10 md:h-14 rounded-pebble bg-surface-container-lowest border border-outline-variant flex items-center justify-center text-secondary transition-all group-hover:bg-primary group-hover:text-on-primary group-hover:border-primary group-hover:shadow-lg"
+                  >
                     <span className="material-symbols-outlined text-[20px]">play_arrow</span>
                   </button>
                 </article>

@@ -1,24 +1,26 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { auth, googleProvider, isFirebaseConfigured } from '../lib/firebase';
-import { 
-  signInWithPopup, 
+import {
+  signInWithPopup,
   signInWithRedirect,
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
-  updateProfile, 
-  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  updateProfile,
+  onIdTokenChanged,
   sendPasswordResetEmail
 } from 'firebase/auth';
 import type { User } from '../types';
 import { safeStorage } from '../utils/safeStorage';
 import { authAPI } from '../api/client';
 
+let authListenersBound = false;
+
 // Helper to translate Firebase technical errors to user-friendly messages
 const getAuthErrorMessage = (error: any): string => {
   if (!error) return 'An unknown error occurred.';
-  
+
   const code = error.code || '';
   const message = error.message || String(error);
 
@@ -48,7 +50,7 @@ const getAuthErrorMessage = (error: any): string => {
   if (message.includes('Firebase: Error')) {
     return 'Authentication failed. Please try again.';
   }
-  
+
   return message;
 };
 
@@ -61,7 +63,7 @@ interface AuthState {
   logout: () => Promise<void>;
   updateUser: (user: Partial<User>) => void;
   setLoading: (v: boolean) => void;
-  signInWithGoogle: () => Promise<{ error?: string }>;
+  signInWithGoogle: () => Promise<{ error?: string; redirecting?: boolean }>;
   signInWithEmail: (email: string, password: string) => Promise<{ error?: string }>;
   signUpWithEmail: (email: string, password: string, firstName: string, lastName: string) => Promise<{ error?: string }>;
   sendPasswordReset: (email: string) => Promise<{ error?: string }>;
@@ -78,14 +80,14 @@ export const useAuthStore = create<AuthState>()(
 
       login: (user, token) => set({ user, token, isAuthenticated: true, loading: false }),
       logout: async () => {
-        if (isFirebaseConfigured()) {
+        if (isFirebaseConfigured() && auth) {
           try {
             await signOut(auth);
           } catch {
             // Ignore sign-out errors
           }
         }
-        set({ user: null, token: null, isAuthenticated: false });
+        set({ user: null, token: null, isAuthenticated: false, loading: false });
       },
       updateUser: (updates) =>
         set((state) => ({
@@ -94,7 +96,7 @@ export const useAuthStore = create<AuthState>()(
       setLoading: (loading) => set({ loading }),
 
       sendPasswordReset: async (email: string) => {
-        if (!isFirebaseConfigured()) return { error: 'Auth service not configured.' };
+        if (!isFirebaseConfigured() || !auth) return { error: 'Auth service not configured.' };
         try {
           await sendPasswordResetEmail(auth, email);
           return {};
@@ -104,7 +106,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       signInWithGoogle: async () => {
-        if (!isFirebaseConfigured()) {
+        if (!isFirebaseConfigured() || !auth || !googleProvider) {
           console.warn('[PrepMate] Firebase not configured. Cannot sign in with Google.');
           return { error: 'Auth service not configured.' };
         }
@@ -116,7 +118,7 @@ export const useAuthStore = create<AuthState>()(
           let result;
           if (isMobileWebView) {
             await signInWithRedirect(auth, googleProvider);
-            return {};
+            return { redirecting: true };
           }
           try {
             result = await signInWithPopup(auth, googleProvider);
@@ -128,7 +130,7 @@ export const useAuthStore = create<AuthState>()(
             ) {
               console.warn('[PrepMate] Popup blocked or failed. Falling back to redirect.');
               await signInWithRedirect(auth, googleProvider);
-              return {};
+              return { redirecting: true };
             }
             throw popupError;
           }
@@ -152,8 +154,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       signInWithEmail: async (email, password) => {
-        // When Firebase is configured, use Firebase Auth
-        if (isFirebaseConfigured()) {
+        if (isFirebaseConfigured() && auth) {
           set({ loading: true });
           try {
             const result = await signInWithEmailAndPassword(auth, email, password);
@@ -172,8 +173,7 @@ export const useAuthStore = create<AuthState>()(
             return { error: getAuthErrorMessage(error) };
           }
         }
-        
-        // When Firebase is NOT configured, use the backend API directly
+
         set({ loading: true });
         try {
           const { data } = await authAPI.login(email, password);
@@ -193,23 +193,24 @@ export const useAuthStore = create<AuthState>()(
       },
 
       signUpWithEmail: async (email, password, firstName, lastName) => {
-        // When Firebase is configured, use Firebase Auth
-        if (isFirebaseConfigured()) {
+        if (isFirebaseConfigured() && auth) {
           set({ loading: true });
           try {
             const result = await createUserWithEmailAndPassword(auth, email, password);
             await updateProfile(result.user, {
-              displayName: `${firstName} ${lastName}`,
+              displayName: `${firstName.trim()} ${lastName.trim()}`.trim(),
             });
-            const token = await result.user.getIdToken();
+            const token = await result.user.getIdToken(true);
             const user = result.user;
             get().login({
               id: user.uid,
               email: user.email || '',
-              firstName,
-              lastName,
+              firstName: firstName.trim(),
+              lastName: lastName.trim(),
               createdAt: user.metadata.creationTime || new Date().toISOString(),
             }, token);
+            // Persist chosen profile names to backend DB cleanly
+            authAPI.updateProfile({ firstName: firstName.trim(), lastName: lastName.trim() }).catch(() => {});
             return {};
           } catch (error: any) {
             set({ loading: false });
@@ -217,7 +218,6 @@ export const useAuthStore = create<AuthState>()(
           }
         }
 
-        // When Firebase is NOT configured, use the backend API directly
         set({ loading: true });
         try {
           const { data } = await authAPI.register({ email, password, firstName, lastName });
@@ -237,16 +237,32 @@ export const useAuthStore = create<AuthState>()(
       },
 
       initAuth: () => {
-        if (!isFirebaseConfigured()) return;
-        onAuthStateChanged(auth, async (user) => {
+        if (authListenersBound) return;
+        authListenersBound = true;
+
+        if (typeof window !== 'undefined') {
+          window.addEventListener('auth-unauthorized', () => {
+            if (!auth?.currentUser) {
+              set({ user: null, token: null, isAuthenticated: false, loading: false });
+            }
+          });
+        }
+
+        if (!isFirebaseConfigured() || !auth) return;
+
+        onIdTokenChanged(auth, async (user) => {
           if (user) {
             const token = await user.getIdToken();
+            const currentUser = get().user;
+            const fbFirst = user.displayName?.split(' ')[0] || '';
+            const fbLast = user.displayName?.split(' ').slice(1).join(' ') || '';
+
             set({
               user: {
                 id: user.uid,
                 email: user.email || '',
-                firstName: user.displayName?.split(' ')[0] || user.email?.split('@')[0] || '',
-                lastName: user.displayName?.split(' ').slice(1).join(' ') || '',
+                firstName: fbFirst || currentUser?.firstName || user.email?.split('@')[0] || '',
+                lastName: fbLast || currentUser?.lastName || '',
                 avatarUrl: user.photoURL || undefined,
                 createdAt: user.metadata.creationTime || new Date().toISOString(),
               },
@@ -267,7 +283,6 @@ export const useAuthStore = create<AuthState>()(
         token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
-      // Custom storage handler to prevent crashes on QuotaExceededError (Incognito/Private modes)
       storage: safeStorage,
     }
   )

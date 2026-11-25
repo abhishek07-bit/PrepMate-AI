@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { safeGetItem, safeSetItem } from '../../utils/safeStorage';
 
 export default function CookieBanner() {
@@ -26,9 +27,9 @@ export default function CookieBanner() {
   return (
     <div className="fixed bottom-0 left-0 w-full bg-surface-container-high border-t border-outline-variant p-md md:p-lg z-[100] flex flex-col md:flex-row items-center justify-between gap-md animate-slide-up shadow-2xl">
       <div className="flex flex-col gap-xs max-w-3xl">
-        <h3 className="font-label-bold text-label-lg text-primary tracking-widest uppercase">Cookie Policy</h3>
+        <h3 className="font-label-bold text-label-bold text-primary tracking-widest uppercase">Cookie Policy</h3>
         <p className="font-body-sm text-body-sm text-secondary">
-          We use cookies to improve your experience and securely maintain your session. By continuing to use this platform, you consent to our use of essential and performance cookies as detailed in our <a href="/cookie-policy" className="text-primary underline">Cookie Policy</a>.
+          We use cookies to improve your experience and securely maintain your session. By continuing to use this platform, you consent to our use of essential and performance cookies as detailed in our <Link to="/cookie-policy" className="text-primary underline">Cookie Policy</Link>.
         </p>
       </div>
       <div className="flex flex-wrap items-center justify-center gap-sm shrink-0 w-full md:w-auto">

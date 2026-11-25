@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useInterviewStore } from '../../store/interviewStore';
+import { useResumeStore } from '../../store/resumeStore';
+import { useSettingsStore } from '../../store/settingsStore';
+import { useUIStore } from '../../store/uiStore';
 import { interviewAPI } from '../../api/client';
 import NeuralLoader from '../../components/common/NeuralLoader';
 
@@ -14,39 +17,57 @@ const POPULAR_COMPANIES = [
   'Apple', 'Stripe', 'OpenAI', 'Tesla', 'Airbnb'
 ];
 
+const DIFFICULTY_TO_RIGOR: Record<string, number> = {
+  beginner: 2,
+  intermediate: 3,
+  advanced: 5,
+};
+
 export default function InterviewSetupPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const companyParam = searchParams.get('company');
+  const roleParam = searchParams.get('role');
 
   const setupSession = useInterviewStore((s) => s.setupSession);
   const setQuestions = useInterviewStore((s) => s.setQuestions);
-  
-  const [selectedRole, setSelectedRole] = useState('Senior Software Engineer');
+  const resumeSkills = useResumeStore((s) => s.parsedData?.skills || []);
+  const { difficulty, targetRoles } = useSettingsStore();
+  const addToast = useUIStore((s) => s.addToast);
+
+  const roleChoices = Array.from(new Set([...targetRoles, ...POPULAR_ROLES]));
+
+  const [selectedRole, setSelectedRole] = useState(roleParam || targetRoles[0] || 'Senior Software Engineer');
   const [selectedCompany, setSelectedCompany] = useState(companyParam || 'Google');
   const [selectedPersona, setSelectedPersona] = useState('analytical');
-  const [rigorLevel, setRigorLevel] = useState(4);
+  const [rigorLevel, setRigorLevel] = useState(DIFFICULTY_TO_RIGOR[difficulty] ?? 4);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const rigorLabels = ['Baseline', 'Standard', 'Advanced', 'Expert', 'Bar Raiser'];
 
   const handleStart = async () => {
-    if (!selectedRole || !selectedCompany) return;
+    if (!selectedRole.trim() || !selectedCompany.trim()) {
+      setError('Please enter both a job role and a target company.');
+      return;
+    }
     setLoading(true);
+    setError(null);
     try {
       const { data } = await interviewAPI.setup({
-        role: selectedRole,
-        company: selectedCompany,
+        role: selectedRole.trim(),
+        company: selectedCompany.trim(),
         persona: selectedPersona,
-        rigorLevel: rigorLevel,
+        rigorLevel,
+        skills: resumeSkills,
       });
 
       if (data.sessionId) {
         setupSession({
           sessionId: data.sessionId,
-          role: selectedRole,
-          company: selectedCompany,
+          role: selectedRole.trim(),
+          company: selectedCompany.trim(),
           persona: selectedPersona,
         });
 
@@ -54,8 +75,11 @@ export default function InterviewSetupPage() {
         setQuestions(qRes.data);
         navigate('/interview/session');
       }
-    } catch (error) {
-      console.error('Failed to setup interview:', error);
+    } catch (err: any) {
+      console.error('Failed to setup interview:', err);
+      const msg = err.response?.data?.detail || 'Failed to prepare interview session. Please try again.';
+      setError(msg);
+      addToast(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -71,12 +95,19 @@ export default function InterviewSetupPage() {
 
   return (
     <div className="w-full pb-xl animate-fade-in flex flex-col gap-xl">
-      
+
       {/* Header */}
       <section className="flex flex-col gap-xs">
         <h1 className="font-display text-display text-primary leading-none tracking-tighter">Practice Interview Setup</h1>
         <p className="font-body-lg text-body-lg text-secondary">Choose the job role and company you are applying for, and set up your practice session.</p>
       </section>
+
+      {error && (
+        <div className="bg-error/10 border border-error/20 text-error px-md py-sm rounded-pebble flex items-center gap-sm">
+          <span className="material-symbols-outlined text-[18px]">error</span>
+          <p className="font-label-bold text-sm">{error}</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-lg items-start">
         
@@ -104,7 +135,7 @@ export default function InterviewSetupPage() {
                   />
                 </div>
                 <div className="flex flex-wrap gap-sm">
-                  {POPULAR_ROLES.map(role => (
+                  {roleChoices.map(role => (
                     <button
                       key={role}
                       onClick={() => setSelectedRole(role)}

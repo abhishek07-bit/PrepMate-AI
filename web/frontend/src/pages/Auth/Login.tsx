@@ -32,14 +32,14 @@ export default function LoginPage() {
     setGoogleLoading(false);
     if (result?.error) {
       setError(result.error);
-    } else {
+    } else if (!result?.redirecting) {
       navigate('/dashboard');
     }
   };
 
   return (
     <div className="flex items-center justify-center w-full">
-      <div className="w-full max-w-md bg-surface border border-outline-variant rounded-pebble p-xl lg:p-container-padding shadow-lg">
+      <div className="w-full max-w-md bg-surface border border-outline-variant rounded-pebble p-xl lg:p-container-padding shadow-lg flex flex-col gap-lg">
         <div className="text-center mb-xl">
           <h1 className="font-display text-display text-primary leading-none tracking-tighter mb-xs">Welcome Back</h1>
           <p className="font-body-lg text-body-lg text-secondary">Sign in to continue your preparation.</p>

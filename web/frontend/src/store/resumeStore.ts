@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { safeStorage } from '../utils/safeStorage';
 
-interface ParsedResume {
+export interface ParsedResume {
   skills: string[];
   experience: { title: string; company: string; duration: string }[];
 }
 
-interface ResumeAnalysis {
+export interface ResumeAnalysis {
   atsScore: number;
   impactScore: number;
   brevityScore: number;
@@ -22,7 +23,7 @@ interface ResumeAnalysis {
   criticalFixes: string[];
 }
 
-interface MatchAnalysis {
+export interface MatchAnalysis {
   rejectionProbability: number;
   matchScore: number;
   topRejectionReasons: string[];
@@ -37,7 +38,6 @@ interface ResumeState {
   analysis: ResumeAnalysis | null;
   matchAnalysis: MatchAnalysis | null;
   isUploading: boolean;
-  isParsing: boolean;
   isAnalyzing: boolean;
   isMatching: boolean;
   setResumeId: (id: string | null) => void;
@@ -46,7 +46,6 @@ interface ResumeState {
   setAnalysis: (analysis: ResumeAnalysis | null) => void;
   setMatchAnalysis: (analysis: MatchAnalysis | null) => void;
   setUploading: (val: boolean) => void;
-  setParsing: (val: boolean) => void;
   setAnalyzing: (val: boolean) => void;
   setMatching: (val: boolean) => void;
   clearResume: () => void;
@@ -61,7 +60,6 @@ export const useResumeStore = create<ResumeState>()(
       analysis: null,
       matchAnalysis: null,
       isUploading: false,
-      isParsing: false,
       isAnalyzing: false,
       isMatching: false,
       setResumeId: (id) => set({ id }),
@@ -70,14 +68,19 @@ export const useResumeStore = create<ResumeState>()(
       setAnalysis: (analysis) => set({ analysis }),
       setMatchAnalysis: (matchAnalysis) => set({ matchAnalysis }),
       setUploading: (val) => set({ isUploading: val }),
-      setParsing: (val) => set({ isParsing: val }),
       setAnalyzing: (val) => set({ isAnalyzing: val }),
       setMatching: (val) => set({ isMatching: val }),
       clearResume: () => set({ id: null, file: null, parsedData: null, analysis: null, matchAnalysis: null }),
     }),
     {
       name: 'prepmate-resume',
-      partialize: (state) => ({ file: state.file, parsedData: state.parsedData }),
+      storage: safeStorage,
+      partialize: (state) => ({
+        id: state.id,
+        file: state.file,
+        parsedData: state.parsedData,
+        analysis: state.analysis,
+      }),
     }
   )
 );

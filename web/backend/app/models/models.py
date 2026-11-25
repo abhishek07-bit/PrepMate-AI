@@ -51,7 +51,7 @@ class InterviewSession(Base):
     company = Column(String, nullable=False)
     persona = Column(String, nullable=False)
     rigor_level = Column(Integer, nullable=False)
-    duration = Column(Integer, default=45)
+    duration = Column(Integer, default=0)  # Stored in seconds once completed
     status = Column(String, default="setup")
     score = Column(Float, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

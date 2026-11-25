@@ -1,9 +1,6 @@
 import { Link } from 'react-router-dom';
-import { useAuthStore } from '../../store/authStore';
 
 export default function Footer() {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-
   return (
     <footer className="w-full bg-surface-container-low border-t border-outline-variant mt-auto transition-all">
       <div className="max-w-max-width mx-auto px-lg md:px-xl lg:px-2xl py-xl">

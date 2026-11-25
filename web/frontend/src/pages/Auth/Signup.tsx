@@ -34,7 +34,7 @@ export default function SignupPage() {
     setGoogleLoading(false);
     if (result?.error) {
       setError(result.error);
-    } else {
+    } else if (!result?.redirecting) {
       navigate('/dashboard');
     }
   };
@@ -121,10 +121,15 @@ export default function SignupPage() {
           <div className="flex flex-col gap-xs">
             <label className="font-label-bold text-label-sm text-primary uppercase tracking-widest pl-1" htmlFor="signupPassword">Password</label>
             <input
-              {...register('password', { required: 'Required', minLength: { value: 6, message: 'Min 6 characters' } })}
+              {...register('password', {
+                required: 'Required',
+                minLength: { value: 8, message: 'Min 8 characters' },
+                validate: (val) =>
+                  (/[A-Za-z]/.test(val) && /\d/.test(val)) || 'Include letters and numbers',
+              })}
               className="w-full bg-surface-container-lowest border border-outline-variant rounded-pebble py-md px-lg font-body-md text-body-md text-primary outline-none focus:border-primary transition-colors"
               id="signupPassword"
-              placeholder="Minimum 6 characters"
+              placeholder="Min 8 chars, letters & numbers"
               type="password"
               autoComplete="new-password"
             />

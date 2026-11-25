@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { auth } from '../lib/firebase';
 import { safeGetItem, safeRemoveItem } from '../utils/safeStorage';
 
 // Use window.location.hostname so local network testing on mobile devices routes to the correct computer IP instead of localhost on the phone
@@ -14,8 +15,20 @@ const api = axios.create({
   },
 });
 
-// Request interceptor to attach JWT token
-api.interceptors.request.use((config: any) => {
+// Request interceptor to attach fresh Firebase ID token or stored JWT token
+api.interceptors.request.use(async (config: any) => {
+  if (auth?.currentUser) {
+    try {
+      const freshToken = await auth.currentUser.getIdToken();
+      if (freshToken) {
+        config.headers.Authorization = `Bearer ${freshToken}`;
+        return config;
+      }
+    } catch {
+      // Fall through to stored token
+    }
+  }
+
   const stored = safeGetItem('prepmate-auth');
   if (stored) {
     try {
@@ -53,6 +66,7 @@ export const authAPI = {
   me: () => api.get('/auth/me'),
   updateProfile: (data: { firstName: string; lastName: string }) =>
     api.put('/auth/update-profile', data),
+  deleteAccount: () => api.delete('/auth/me'),
 };
 
 // Resume API
@@ -64,14 +78,16 @@ export const resumeAPI = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+  getLatest: () => api.get('/resume/latest'),
   analyze: (resumeId: string) => api.post(`/resume/analyze/${resumeId}`),
   match: (resumeId: string, jobDescription: string) => api.post(`/resume/match/${resumeId}`, { jobDescription }),
   getSkills: () => api.get('/resume/skills'),
+  delete: (resumeId: string) => api.delete(`/resume/${resumeId}`),
 };
 
 // Interview API
 export const interviewAPI = {
-  setup: (config: { role: string; company: string; persona: string; rigorLevel: number }) =>
+  setup: (config: { role: string; company: string; persona: string; rigorLevel: number; skills?: string[] }) =>
     api.post('/interview/setup', config),
   getQuestions: (sessionId: string) =>
     api.get(`/interview/${sessionId}/questions`),
@@ -90,5 +106,5 @@ export const analyticsAPI = {
 
 // Company API
 export const companyAPI = {
-  getPrep: (company: string) => api.get(`/interview/company/${company}`),
+  getPrep: (company: string) => api.get(`/interview/company/${encodeURIComponent(company)}`),
 };

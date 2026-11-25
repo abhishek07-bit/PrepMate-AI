@@ -13,7 +13,7 @@ function parseSections(content: string) {
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
-    if (/^\d+\.\s|^#/.test(trimmed) || trimmed.endsWith(':')) {
+    if (/^\d+\.\s|^#/.test(trimmed) || (trimmed.endsWith(':') && trimmed.length < 60)) {
       if (current) sections.push(current);
       current = { heading: trimmed.replace(/^#\s*/, '').replace(/^\d+\.\s*/, ''), items: [] };
     } else {

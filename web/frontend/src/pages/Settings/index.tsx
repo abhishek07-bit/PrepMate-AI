@@ -1,8 +1,11 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { updateProfile } from 'firebase/auth';
+import { auth } from '../../lib/firebase';
 import { useSettingsStore, type ThemeMode } from '../../store/settingsStore';
 import { useAuthStore } from '../../store/authStore';
 import { useResumeStore } from '../../store/resumeStore';
+import { useUIStore } from '../../store/uiStore';
 import Toggle from '../../components/common/Toggle';
 import { resumeAPI, authAPI } from '../../api/client';
 
@@ -11,6 +14,7 @@ export default function SettingsPage() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const resume = useResumeStore();
+  const addToast = useUIStore((s) => s.addToast);
   const {
     difficulty,
     setDifficulty,
@@ -32,6 +36,8 @@ export default function SettingsPage() {
   const [firstName, setFirstName] = useState(user?.firstName || '');
   const [lastName, setLastName] = useState(user?.lastName || '');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const settingsFileRef = useRef<HTMLInputElement>(null);
 
   const handleSettingsUpload = async (file: File) => {
@@ -44,12 +50,17 @@ export default function SettingsPage() {
     resume.setFile({ name: file.name, size: file.size });
     try {
       const { data } = await resumeAPI.upload(file);
+      resume.setResumeId(data.id);
       resume.setParsedData({ skills: data.skills || [], experience: [] });
-    } catch (err) {
+      resume.setAnalysis(null);
+      resume.setMatchAnalysis(null);
+      addToast('Resume updated.', 'success');
+    } catch (err: any) {
       console.error('Upload failed:', err);
-      resume.setFile(null);
-      resume.setParsedData(null);
-      setUploadError('Upload failed. Please try again.');
+      resume.clearResume();
+      const msg = err?.response?.data?.detail || 'Upload failed. Please try again.';
+      setUploadError(msg);
+      addToast(msg, 'error');
     } finally {
       resume.setUploading(false);
     }
@@ -107,14 +118,21 @@ export default function SettingsPage() {
               setIsUpdating(true);
               try {
                 const { data } = await authAPI.updateProfile({ firstName, lastName });
+                if (auth?.currentUser) {
+                  await updateProfile(auth.currentUser, {
+                    displayName: `${data.firstName} ${data.lastName}`.trim(),
+                  }).catch(() => {});
+                }
                 useAuthStore.getState().updateUser({
                   firstName: data.firstName,
                   lastName: data.lastName,
                 });
                 setSaveStatus('saved');
+                addToast('Profile updated.', 'success');
                 setTimeout(() => setSaveStatus('idle'), 3000);
-              } catch (error) {
-                console.error("Profile update failed:", error);
+              } catch (err: any) {
+                console.error("Profile update failed:", err);
+                addToast(err?.response?.data?.detail || 'Failed to update profile.', 'error');
               } finally {
                 setIsUpdating(false);
               }
@@ -168,7 +186,18 @@ export default function SettingsPage() {
                 </div>
                 <button
                   aria-label="Delete Resume"
-                  onClick={() => { resume.setFile(null); resume.setParsedData(null); }}
+                  onClick={async () => {
+                    const resumeId = resume.id;
+                    resume.clearResume();
+                    if (resumeId) {
+                      try {
+                        await resumeAPI.delete(resumeId);
+                        addToast('Resume removed.', 'info');
+                      } catch {
+                        // Already cleared locally
+                      }
+                    }
+                  }}
                   className="text-error hover:text-on-error-container transition-colors p-sm rounded-full hover:bg-error-container"
                 >
                   <span className="material-symbols-outlined">delete</span>
@@ -301,11 +330,57 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          {/* Sign Out */}
-          <section className="mt-auto pt-lg">
-            <button onClick={handleLogout} className="text-error font-label-bold text-label-bold hover:underline transition-all flex items-center gap-xs">
+          {/* Sign Out & Account Deletion */}
+          <section className="mt-auto pt-lg flex flex-col gap-md">
+            <button onClick={handleLogout} className="text-error font-label-bold text-label-bold hover:underline transition-all flex items-center gap-xs w-fit">
               <span className="material-symbols-outlined text-[18px]">logout</span> Sign Out
             </button>
+
+            <div className="border-t border-outline-variant pt-md flex flex-col gap-sm">
+              {!confirmDeleteAccount ? (
+                <button
+                  type="button"
+                  onClick={() => setConfirmDeleteAccount(true)}
+                  className="text-secondary hover:text-error font-label-sm text-label-sm transition-colors w-fit"
+                >
+                  Delete Account & Data
+                </button>
+              ) : (
+                <div className="bg-error/10 border border-error/20 rounded-pebble p-md flex flex-col gap-sm">
+                  <p className="font-label-bold text-xs text-error">Permanently delete your account, resumes, and interview history?</p>
+                  <div className="flex gap-sm">
+                    <button
+                      type="button"
+                      disabled={isDeletingAccount}
+                      onClick={async () => {
+                        setIsDeletingAccount(true);
+                        try {
+                          await authAPI.deleteAccount();
+                          resume.clearResume();
+                          await logout();
+                          addToast('Account deleted.', 'info');
+                          navigate('/');
+                        } catch (err: any) {
+                          addToast(err?.response?.data?.detail || 'Failed to delete account.', 'error');
+                        } finally {
+                          setIsDeletingAccount(false);
+                        }
+                      }}
+                      className="bg-error text-on-error px-md py-xs rounded-pebble font-label-bold text-xs disabled:opacity-50"
+                    >
+                      {isDeletingAccount ? 'Deleting...' : 'Confirm Delete'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeleteAccount(false)}
+                      className="px-md py-xs rounded-pebble border border-outline-variant text-xs font-label-bold text-secondary hover:text-primary"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </section>
         </div>
       </div>

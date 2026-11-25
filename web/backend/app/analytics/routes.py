@@ -51,13 +51,13 @@ def get_weaknesses(current_user: User = Depends(get_current_user), db: Session =
         
     questions = db.query(Question).filter(Question.session_id.in_(session_ids)).all()
     q_ids = [q.id for q in questions]
-    answers = db.query(Answer).filter(Answer.question_id.in_(q_ids)).all()
-    
+    answers = db.query(Answer).filter(Answer.question_id.in_(q_ids)).all() if q_ids else []
+    answer_map = {a.question_id: a for a in answers}
+
     # Group by category
     category_scores = collections.defaultdict(list)
     for q in questions:
-        # find answer for this question
-        ans = next((a for a in answers if a.question_id == q.id), None)
+        ans = answer_map.get(q.id)
         if ans and ans.score is not None:
             cat_name = q.category if q.category else "Uncategorized"
             category_scores[cat_name].append(ans.score)
@@ -88,21 +88,25 @@ def get_weaknesses(current_user: User = Depends(get_current_user), db: Session =
 def get_history(
     skip: int = Query(0, ge=0),
     limit: int = Query(20, ge=1, le=100),
-    current_user: User = Depends(get_current_user), 
+    include_incomplete: bool = Query(False),
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    sessions = db.query(InterviewSession).filter(
-        InterviewSession.user_id == current_user.id
-    ).order_by(InterviewSession.created_at.desc()).offset(skip).limit(limit).all()
-    
+    query = db.query(InterviewSession).filter(InterviewSession.user_id == current_user.id)
+    if not include_incomplete:
+        query = query.filter(InterviewSession.status == "completed")
+
+    sessions = query.order_by(InterviewSession.created_at.desc()).offset(skip).limit(limit).all()
+
     return [
         {
             "id": s.id,
             "role": s.role,
             "company": s.company,
             "persona": s.persona,
+            "status": s.status,
             "score": s.score,
-            "duration": s.duration,
+            "duration": s.duration or 0,
             "createdAt": s.created_at.isoformat(),
         }
         for s in sessions
