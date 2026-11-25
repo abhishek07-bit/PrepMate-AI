@@ -19,6 +19,7 @@ import { useResumeStore } from './resumeStore';
 import { useInterviewStore } from './interviewStore';
 import { useUIStore } from './uiStore';
 
+const REDIRECT_PENDING_KEY = 'prepmate_google_redirect_pending';
 let authListenersBound = false;
 let lastSyncedUid: string | null = null;
 
@@ -47,8 +48,14 @@ const getAuthErrorMessage = (error: any): string => {
   if (code === 'auth/too-many-requests') {
     return 'Too many failed attempts. Please try again later.';
   }
-  if (code === 'auth/popup-closed-by-user') {
+  if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
     return 'Sign-in window was closed before completing.';
+  }
+  if (code === 'auth/popup-blocked') {
+    return 'Sign-in popup was blocked by your browser. Please allow popups for this site and try again.';
+  }
+  if (code === 'auth/web-storage-unsupported') {
+    return 'Third-party storage or cookies are blocked in your browser. Allow cookies/storage for Google Sign-In or sign in with email/password.';
   }
 
   // Fallback for non-Firebase or unmapped errors
@@ -124,22 +131,27 @@ export const useAuthStore = create<AuthState>()(
           const isMobileWebView = /FBAN|FBAV|Instagram|Twitter|LinkedIn|WebView/i.test(
             typeof navigator !== 'undefined' ? navigator.userAgent : ''
           );
-          let result;
-          if (isMobileWebView) {
+          const triggerRedirect = async () => {
+            try {
+              window.sessionStorage.setItem(REDIRECT_PENDING_KEY, '1');
+            } catch {
+              // Ignore storage write restriction
+            }
             await signInWithRedirect(auth, googleProvider);
             return { redirecting: true };
+          };
+
+          let result;
+          if (isMobileWebView) {
+            return await triggerRedirect();
           }
           try {
             result = await signInWithPopup(auth, googleProvider);
           } catch (popupError: any) {
-            if (
-              popupError.code === 'auth/popup-blocked' ||
-              popupError.code === 'auth/popup-closed-by-user' ||
-              /popup/i.test(popupError.message || '')
-            ) {
-              console.warn('[PrepMate] Popup blocked or failed. Falling back to redirect.');
-              await signInWithRedirect(auth, googleProvider);
-              return { redirecting: true };
+            console.warn('[PrepMate] Google popup failed:', popupError?.code || 'unknown', popupError?.message || '');
+            if (popupError?.code === 'auth/popup-blocked') {
+              console.warn('[PrepMate] Popup blocked by browser. Falling back to redirect.');
+              return await triggerRedirect();
             }
             throw popupError;
           }
@@ -263,9 +275,30 @@ export const useAuthStore = create<AuthState>()(
 
         if (!isFirebaseConfigured() || !auth) return;
 
-        getRedirectResult(auth).catch((error: any) => {
-          useUIStore.getState().addToast(getAuthErrorMessage(error), 'error');
-        });
+        getRedirectResult(auth)
+          .then((redirectResult) => {
+            let wasPending = false;
+            try {
+              wasPending = window.sessionStorage.getItem(REDIRECT_PENDING_KEY) === '1';
+              window.sessionStorage.removeItem(REDIRECT_PENDING_KEY);
+            } catch {
+              // Ignore storage errors
+            }
+            if (wasPending && !redirectResult && !auth.currentUser) {
+              useUIStore.getState().addToast(
+                'Google redirect login did not complete because cross-origin browser storage was blocked. Allow popups for this site and try Continue with Google again.',
+                'error'
+              );
+            }
+          })
+          .catch((error: any) => {
+            try {
+              window.sessionStorage.removeItem(REDIRECT_PENDING_KEY);
+            } catch {
+              // Ignore storage errors
+            }
+            useUIStore.getState().addToast(getAuthErrorMessage(error), 'error');
+          });
 
         onIdTokenChanged(auth, async (user) => {
           if (user) {

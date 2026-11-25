@@ -96,7 +96,7 @@ Copy `backend/.env.example` to `backend/.env`:
 ### Frontend (`frontend/.env`)
 Copy `frontend/.env.example` to `frontend/.env`:
 - `VITE_API_URL`: Backend `/api` base URL (e.g., `http://localhost:8000/api` for local dev; defaults to `https://prepmate-api-47v8.onrender.com/api` in production builds)
-- `VITE_FIREBASE_*`: Firebase Web SDK configuration keys
+- `VITE_FIREBASE_*`: Firebase Web SDK configuration keys (`vercel.json` also proxies `/__/auth/*` and `/__/firebase/*` to `prepmateai-bac14.firebaseapp.com` so setting `VITE_FIREBASE_AUTH_DOMAIN=<your-vercel-domain>` works once `https://<your-vercel-domain>/__/auth/handler` is registered in Google Cloud OAuth Authorized Redirect URIs)
 
 ---
 
